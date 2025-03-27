@@ -2,7 +2,7 @@ name: Deploy Backend to EC2
 
 on:
   push:
-    branches: [ main ]  # dev로 바꾸고 싶으면 여기도 dev로 수정해줘
+    branches: [ main ]  # dev 브랜치로 배포하고 싶다면 main → dev 로 변경
 
 jobs:
   deploy:
@@ -36,9 +36,10 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         source: ./build/libs/${{ secrets.JAR_NAME }}
         target: ${{ secrets.BACKEND_DIR }}
+        strip_components: 0  # 경로 유지 (JAR이 바로 BACKEND_DIR에 위치하게 됨)
         rm: true
 
-    - name: Restart app on EC2 using systemd
+    - name: Restart app on EC2
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
@@ -47,4 +48,3 @@ jobs:
         script: |
           sudo systemctl daemon-reexec
           sudo systemctl restart lecture.service
-
