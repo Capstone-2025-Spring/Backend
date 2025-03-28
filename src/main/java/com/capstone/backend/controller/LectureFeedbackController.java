@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.Paths;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,13 +24,19 @@ public class LectureFeedbackController {
     @PostMapping("/feedback")
     public ResponseEntity<String> uploadLectureAndGetFeedback(@RequestParam("file") MultipartFile file) {
         try {
-            // 1. MP4 파일 임시 저장
-            Path tempFile = Files.createTempFile("lecture-", ".mp4");
-            Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-            File mp4File = tempFile.toFile();
+            // 1. WAV 파일 임시 저장
+            Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads");
+            Files.createDirectories(uploadDir);
 
-            // 2. 전체 흐름 실행 (mp4 → mp3 → Clova → GPT)
-            String feedback = lectureFeedbackService.generateFeedbackFromLecture(mp4File);
+            String filename = "lecture-" + System.currentTimeMillis() + ".wav";
+            Path wavPath = uploadDir.resolve(filename);
+            file.transferTo(wavPath.toFile());
+
+            // 2. 전체 흐름 실행 (wav → Clova → GPT)
+            String feedback = lectureFeedbackService.generateFeedbackFromLecture(wavPath.toFile());
+
+            // 3. 임시 파일 삭제
+            Files.deleteIfExists(wavPath);
 
             return ResponseEntity.ok(feedback);
         } catch (Exception e) {

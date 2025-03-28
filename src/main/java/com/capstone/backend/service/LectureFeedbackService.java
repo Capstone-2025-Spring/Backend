@@ -11,16 +11,12 @@ public class LectureFeedbackService {
 
     private final ClovaSpeechService clovaSpeechService;
     private final GptService gptService;
-    private final MediaConvertService mediaConvertService;
 
-    public String generateFeedbackFromLecture(File mp4File) {
-        // 1. MP4 → MP3 변환
-        File mp3File = mediaConvertService.convertToMp3(mp4File);
+    public String generateFeedbackFromLecture(File wavFile) {
+        // 1. Clova로 텍스트 추출
+        String transcript = clovaSpeechService.recognizeSpeech(wavFile);
 
-        // 2. Clova로 텍스트 추출 (result.text)
-        String transcript = clovaSpeechService.recognizeSpeech(mp3File);
-
-        // 3. GPT 피드백 생성
+        // 2. GPT 피드백 생성
         return gptService.getFeedbackFromGpt(transcript);
     }
 }

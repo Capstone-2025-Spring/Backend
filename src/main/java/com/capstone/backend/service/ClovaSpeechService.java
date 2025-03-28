@@ -28,13 +28,12 @@ public class ClovaSpeechService {
     @Value("${clova.base-url}")
     private String baseUrl;
 
-    public String sendAudioToClova(File mp3File) {
+    public String sendAudioToClova(File wavFile) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(baseUrl + "/recognizer/upload");
             httpPost.setHeader(new BasicHeader("Accept", "application/json"));
             httpPost.setHeader(new BasicHeader("X-CLOVASPEECH-API-KEY", secretKey));
 
-            // 요청 본문 구성
             String paramsJson = """
                 {
                   "language": "ko-KR",
@@ -43,13 +42,13 @@ public class ClovaSpeechService {
                   "fullText": true,
                   "diarization": {
                     "enable": false
-                    }
+                  }
                 }
             """;
 
             HttpEntity entity = MultipartEntityBuilder.create()
                     .addTextBody("params", paramsJson, ContentType.APPLICATION_JSON)
-                    .addBinaryBody("media", mp3File, ContentType.DEFAULT_BINARY, mp3File.getName())
+                    .addBinaryBody("media", wavFile, ContentType.create("audio/wav"), wavFile.getName())
                     .build();
 
             httpPost.setEntity(entity);
@@ -63,8 +62,9 @@ public class ClovaSpeechService {
             throw new RuntimeException("Clova 요청 중 오류 발생: " + e.getMessage(), e);
         }
     }
-    public String recognizeSpeech(File mp3File) {
-        String responseJson = sendAudioToClova(mp3File);
+
+    public String recognizeSpeech(File wavFile) {
+        String responseJson = sendAudioToClova(wavFile);
 
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -80,5 +80,4 @@ public class ClovaSpeechService {
             throw new RuntimeException("Clova 응답 파싱 실패: " + e.getMessage(), e);
         }
     }
-
 }

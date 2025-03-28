@@ -28,26 +28,12 @@ public class LectureUploadController {
             Files.createDirectories(uploadDir);
 
             String timestamp = String.valueOf(System.currentTimeMillis());
-            Path mp4Path = uploadDir.resolve("lecture_" + timestamp + ".mp4");
-            Path mp3Path = uploadDir.resolve("lecture_" + timestamp + ".mp3");
+            Path wavPath = uploadDir.resolve("lecture_" + timestamp + ".wav");
+            file.transferTo(wavPath.toFile());
 
-            file.transferTo(mp4Path.toFile());
+            String transcript = clovaSpeechService.recognizeSpeech(wavPath.toFile());
 
-            String ffmpegPath = "C:/Users/g2hyeong/Downloads/ffmpeg-N-118896-g9f0970ee35-win64-gpl-shared/ffmpeg-N-118896-g9f0970ee35-win64-gpl-shared/bin/ffmpeg.exe";
-
-            ProcessBuilder pb = new ProcessBuilder(
-                    ffmpegPath,
-                    "-i", mp4Path.toString(),
-                    "-vn",
-                    "-acodec", "libmp3lame",
-                    mp3Path.toString()
-            );
-            pb.inheritIO().start().waitFor();
-
-            String transcript = clovaSpeechService.sendAudioToClova(mp3Path.toFile());
-
-            Files.deleteIfExists(mp4Path);
-            Files.deleteIfExists(mp3Path);
+            Files.deleteIfExists(wavPath);
 
             return ResponseEntity.ok(transcript);
         } catch (Exception e) {
