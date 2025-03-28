@@ -34,7 +34,7 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
-        source: ./build/libs/${{ secrets.JAR_NAME }}
+        source: build/libs/backend-0.0.1-SNAPSHOT.jar
         target: ${{ secrets.BACKEND_DIR }}
         rm: false
 
