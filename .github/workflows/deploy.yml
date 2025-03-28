@@ -36,7 +36,6 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         source: ./build/libs/${{ secrets.JAR_NAME }}
         target: ${{ secrets.BACKEND_DIR }}
-        strip_components: 0  # 경로 유지 (JAR이 바로 BACKEND_DIR에 위치하게 됨)
         rm: true
 
     - name: Restart app on EC2
