@@ -2,7 +2,7 @@ name: Deploy Backend to EC2
 
 on:
   push:
-    branches: [ main ]  # 필요 시 'dev'로 변경 가능
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -39,7 +39,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: build/libs/backend-0.0.1-SNAPSHOT.jar
           target: /home/ec2-user/app/build/libs/
-          rm: false  # 기존 폴더 삭제 금지
+          overwrite: true
 
       - name: Restart backend service on EC2
         uses: appleboy/ssh-action@master
@@ -48,15 +48,18 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
+            echo "🔁 기존 JAR 제거"
+            rm -f /home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
+            echo "🛠 서비스 재시작"
             sudo systemctl daemon-reexec
             sudo systemctl restart lecture.service
 
-      - name: 확인용 - EC2의 최신 JAR 파일 타임스탬프 출력
+      - name: ✅ EC2의 JAR 타임스탬프 확인
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            echo "배포된 JAR 파일 확인:"
+            echo "🗂 최신 JAR 정보:"
             ls -lh /home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
