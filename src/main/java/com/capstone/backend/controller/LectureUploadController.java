@@ -28,13 +28,18 @@ public class LectureUploadController {
             Path uploadDir = projectRoot.resolve("uploads");
             Files.createDirectories(uploadDir);
 
+            // 파일 확장자 유지
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String timestamp = String.valueOf(System.currentTimeMillis());
-            Path wavPath = uploadDir.resolve("lecture_" + timestamp + ".wav");
-            file.transferTo(wavPath.toFile());
+            Path savedPath = uploadDir.resolve("lecture_" + timestamp + extension);
 
-            String transcript = clovaSpeechService.recognizeSpeech(wavPath.toFile());
+            file.transferTo(savedPath.toFile());
 
-            Files.deleteIfExists(wavPath);
+            // Clova 처리 (메서드명이 sendAudioToClova인지 확인)
+            String transcript = clovaSpeechService.sendAudioToClova(savedPath.toFile());
+
+            Files.deleteIfExists(savedPath);
 
             LectureUploadAudioRespondDTO responseDto = new LectureUploadAudioRespondDTO(true, transcript);
             return ResponseEntity.ok(responseDto);
@@ -47,5 +52,4 @@ public class LectureUploadController {
             return ResponseEntity.internalServerError().body(errorDto);
         }
     }
-
 }

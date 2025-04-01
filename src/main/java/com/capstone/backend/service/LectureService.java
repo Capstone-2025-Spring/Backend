@@ -16,9 +16,9 @@ public class LectureService {
         this.pythonClient = pythonClient;
     }
 
-    public void analyzeLecture(File wavFile) {
+    public void analyzeLecture(File mp3File) {
         // 1. Clova로 텍스트 변환
-        String text = clovaSpeechService.recognizeSpeech(wavFile);
+        String text = clovaSpeechService.sendAudioToClova(mp3File);
 
         // 2. Python에 텍스트 전달
         Map<String, Object> result = pythonClient.sendTextToPython(text);
