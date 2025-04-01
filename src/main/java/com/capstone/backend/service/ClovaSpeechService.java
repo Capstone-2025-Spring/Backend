@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -29,22 +30,32 @@ public class ClovaSpeechService {
     private String baseUrl;
 
     public String sendAudioToClova(File wavFile) {
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+        // 👇 타임아웃 설정: 2분 (120초)
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(10 * 1000)                // 서버 연결 최대 10초
+                .setConnectionRequestTimeout(10 * 1000)      // 커넥션 풀 대기 최대 10초
+                .setSocketTimeout(180 * 1000)                // 데이터 응답 최대 대기 시간: 3분
+                .build();
+
+        try (CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .build()) {
+
             HttpPost httpPost = new HttpPost(baseUrl + "/recognizer/upload");
             httpPost.setHeader(new BasicHeader("Accept", "application/json"));
             httpPost.setHeader(new BasicHeader("X-CLOVASPEECH-API-KEY", secretKey));
 
             String paramsJson = """
-                {
-                  "language": "ko-KR",
-                  "completion": "sync",
-                  "wordAlignment": true,
-                  "fullText": true,
-                  "diarization": {
-                    "enable": false
-                  }
-                }
-            """;
+            {
+              "language": "ko-KR",
+              "completion": "sync",
+              "wordAlignment": true,
+              "fullText": true,
+              "diarization": {
+                "enable": false
+              }
+            }
+        """;
 
             HttpEntity entity = MultipartEntityBuilder.create()
                     .addTextBody("params", paramsJson, ContentType.APPLICATION_JSON)
