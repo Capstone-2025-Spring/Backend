@@ -1,13 +1,11 @@
 package com.capstone.backend.controller;
 
 import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
+import com.capstone.backend.dto.UserOptionRequest;
 import com.capstone.backend.service.ClovaSpeechService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
@@ -46,5 +44,16 @@ public class temp {
 
             return ResponseEntity.internalServerError().body(errorDto);
         }
+    }
+
+    @PostMapping("/upload-config") // POST 요청 처리
+    public ResponseEntity<?> uploadUserOptions(@RequestBody UserOptionRequest request) {
+        // 👉 여기에 실제 저장/처리 로직을 넣으면 됨
+
+        // 예시 로그 출력
+        System.out.println("📥 수신된 설정: " + request);
+
+        // 응답 반환
+        return ResponseEntity.ok(new LectureUploadAudioRespondDTO("설정 업로드 완료", "success"));
     }
 }
