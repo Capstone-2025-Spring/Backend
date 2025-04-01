@@ -31,25 +31,12 @@ jobs:
       - name: Debug - JAR 확인
         run: ls -lh build/libs
 
-      - name: Remove existing JAR on EC2 (명시적 삭제)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "🔁 기존 JAR 제거"
-            rm -f /home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
-
-      - name: Copy JAR to EC2 (정확한 위치에)
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          source: build/libs/backend-0.0.1-SNAPSHOT.jar
-          target: /home/ec2-user/app/build/libs/
-          overwrite: true
+      - name: Upload JAR to EC2 (직접 scp 명령 사용)
+        run: |
+          scp -i ${{ secrets.EC2_KEY }} \
+              -o StrictHostKeyChecking=no \
+              build/libs/backend-0.0.1-SNAPSHOT.jar \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
 
       - name: Restart backend service
         uses: appleboy/ssh-action@master
