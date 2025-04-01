@@ -31,18 +31,17 @@ jobs:
       - name: Debug - JAR 확인
         run: ls -lh build/libs
 
-      - name: Copy JAR to EC2 (루트에 직접)
+      - name: Copy JAR to EC2 (정확한 경로로)
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           source: build/libs/backend-0.0.1-SNAPSHOT.jar
-          target: /home/ec2-user/app/
+          target: /home/ec2-user/app/build/libs/
           rm: false  # 기존 폴더 삭제 금지
-          strip_components: 3
 
-      - name: Restart app on EC2
+      - name: Restart backend service on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -51,3 +50,13 @@ jobs:
           script: |
             sudo systemctl daemon-reexec
             sudo systemctl restart lecture.service
+
+      - name: 확인용 - EC2의 최신 JAR 파일 타임스탬프 출력
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            echo "배포된 JAR 파일 확인:"
+            ls -lh /home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar

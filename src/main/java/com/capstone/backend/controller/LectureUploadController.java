@@ -15,13 +15,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/upload")
 @RequiredArgsConstructor
 public class LectureUploadController {
 
     private final ClovaSpeechService clovaSpeechService;
 
-    @PostMapping("/upload/audio")
+    @PostMapping("/audio")
     public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
         try {
             Path projectRoot = Paths.get(System.getProperty("user.dir"));

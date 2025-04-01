@@ -30,7 +30,7 @@ public class ClovaSpeechService {
     private String baseUrl;
 
     public String sendAudioToClova(File wavFile) {
-        // 👇 타임아웃 설정: 2분 (120초)
+        // 👇 타임아웃 설정: 3분 (180초)
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(10 * 1000)                // 서버 연결 최대 10초
                 .setConnectionRequestTimeout(10 * 1000)      // 커넥션 풀 대기 최대 10초
