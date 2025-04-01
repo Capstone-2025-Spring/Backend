@@ -1,7 +1,7 @@
 package com.capstone.backend.controller;
 
 import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
-import com.capstone.backend.dto.UserOptionRequest;
+import com.capstone.backend.dto.LectureConfigRequestDTO;
 import com.capstone.backend.service.ClovaSpeechService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+
+// 전체 삭제 예정
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -47,7 +49,7 @@ public class temp {
     }
 
     @PostMapping("/upload-config") // POST 요청 처리
-    public ResponseEntity<?> uploadUserOptions(@RequestBody UserOptionRequest request) {
+    public ResponseEntity<?> uploadUserOptions(@RequestBody LectureConfigRequestDTO request) {
         // 👉 여기에 실제 저장/처리 로직을 넣으면 됨
 
         // 예시 로그 출력

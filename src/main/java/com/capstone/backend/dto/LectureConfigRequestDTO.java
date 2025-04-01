@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserOptionRequest {
+public class LectureConfigRequestDTO {
     private String category;
     private String school_level;
     private String subject;

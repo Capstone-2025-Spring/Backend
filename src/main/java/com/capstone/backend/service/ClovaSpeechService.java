@@ -89,6 +89,11 @@ public class ClovaSpeechService {
         }
     }
 
+    /**
+     *
+     * 이 밑으로 temp와 함께 전부 삭제 예정
+     */
+
     public String sendAudioToClova2(File wavFile) {
         // 👇 타임아웃 설정: 3분 (180초)
         RequestConfig requestConfig = RequestConfig.custom()
