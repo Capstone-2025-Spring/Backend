@@ -15,31 +15,26 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @RestController
-@RequestMapping("/api/upload")
+@RequestMapping("/api")
 @RequiredArgsConstructor
-public class LectureUploadController {
+public class temp {
 
     private final ClovaSpeechService clovaSpeechService;
 
-    @PostMapping("/audio")
+    @PostMapping("/upload-audio")
     public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
         try {
             Path projectRoot = Paths.get(System.getProperty("user.dir"));
             Path uploadDir = projectRoot.resolve("uploads");
             Files.createDirectories(uploadDir);
 
-            // 파일 확장자 유지
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String timestamp = String.valueOf(System.currentTimeMillis());
-            Path savedPath = uploadDir.resolve("lecture_" + timestamp + extension);
+            Path wavPath = uploadDir.resolve("lecture_" + timestamp + ".wav");
+            file.transferTo(wavPath.toFile());
 
-            file.transferTo(savedPath.toFile());
+            String transcript = clovaSpeechService.sendAudioToClova2(wavPath.toFile());
 
-            // Clova 처리 (메서드명이 sendAudioToClova인지 확인)
-            String transcript = clovaSpeechService.sendAudioToClova(savedPath.toFile());
-
-            Files.deleteIfExists(savedPath);
+            Files.deleteIfExists(wavPath);
 
             LectureUploadAudioRespondDTO responseDto = new LectureUploadAudioRespondDTO("success", transcript);
             return ResponseEntity.ok(responseDto);

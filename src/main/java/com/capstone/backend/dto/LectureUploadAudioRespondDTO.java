@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LectureUploadAudioRespondDTO {
-    private Boolean success;
+    private String message;
     private String text;
 }
