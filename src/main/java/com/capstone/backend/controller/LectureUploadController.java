@@ -1,5 +1,6 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
 import com.capstone.backend.service.ClovaSpeechService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +21,8 @@ public class LectureUploadController {
 
     private final ClovaSpeechService clovaSpeechService;
 
-    @PostMapping("/upload")
-    public ResponseEntity<String> uploadLecture(@RequestParam MultipartFile file) {
+    @PostMapping("/upload/audio")
+    public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
         try {
             Path projectRoot = Paths.get(System.getProperty("user.dir"));
             Path uploadDir = projectRoot.resolve("uploads");
@@ -35,10 +36,16 @@ public class LectureUploadController {
 
             Files.deleteIfExists(wavPath);
 
-            return ResponseEntity.ok(transcript);
+            LectureUploadAudioRespondDTO responseDto = new LectureUploadAudioRespondDTO(true, transcript);
+            return ResponseEntity.ok(responseDto);
+
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("오류 발생: " + e.getMessage());
+            LectureUploadAudioRespondDTO errorDto =
+                    new LectureUploadAudioRespondDTO(false, "오류 발생: " + e.getMessage());
+
+            return ResponseEntity.internalServerError().body(errorDto);
         }
     }
+
 }
