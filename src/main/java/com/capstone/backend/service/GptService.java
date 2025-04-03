@@ -215,5 +215,32 @@ public class GptService {
                 .replace("{text}", lectureText);
     }
 
+    public String getFact(String prompt, String reference, String lectureText) {
+        String finalPrompt = fillFactPromptPlaceholders(prompt, reference, lectureText);
+        Map<String, Object> systemMessage = Map.of(
+                "role", "system",
+                "content", finalPrompt
+        );
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", openAiProperties.getModel());
+        body.put("messages", List.of(systemMessage));
+        body.put("temperature", 0.7);
 
+        // 헤더 구성
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(openAiProperties.getKey());
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        // GPT 호출
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Map> response = restTemplate.postForEntity(API_URL, request, Map.class);
+
+        // 응답 파싱
+        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+        Map<String, Object> messageResp = (Map<String, Object>) choices.get(0).get("message");
+
+        return messageResp.get("content").toString().trim();
+    }
 }
