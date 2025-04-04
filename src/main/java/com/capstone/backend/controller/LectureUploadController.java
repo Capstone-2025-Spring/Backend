@@ -23,34 +23,27 @@ public class LectureUploadController {
     @PostMapping("/audio")
     public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
         try {
-            Path projectRoot = Paths.get(System.getProperty("user.dir"));
-            Path uploadDir = projectRoot.resolve("uploads");
-            Files.createDirectories(uploadDir);
-
-            // 파일 확장자 유지
+            // 파일 확장자 검사
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            Path savedPath = uploadDir.resolve("lecture_" + timestamp + extension);
+            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
+                return ResponseEntity.badRequest()
+                        .body(new LectureUploadAudioRespondDTO("fail", "MP3 파일만 업로드 가능합니다."));
+            }
 
-            file.transferTo(savedPath.toFile());
+            // Clova에 InputStream 직접 전달
+            String transcript = clovaSpeechService.sendAudioToClova(file.getInputStream());
 
-            // Clova 처리 (메서드명이 sendAudioToClova인지 확인)
-            String transcript = clovaSpeechService.sendAudioToClova(savedPath.toFile());
-
-            Files.deleteIfExists(savedPath);
-
+            // 응답 생성
             LectureUploadAudioRespondDTO responseDto = new LectureUploadAudioRespondDTO("success", transcript);
             return ResponseEntity.ok(responseDto);
 
         } catch (Exception e) {
             e.printStackTrace();
-            LectureUploadAudioRespondDTO errorDto =
-                    new LectureUploadAudioRespondDTO("fail", "오류 발생: " + e.getMessage());
-
-            return ResponseEntity.internalServerError().body(errorDto);
+            return ResponseEntity.internalServerError()
+                    .body(new LectureUploadAudioRespondDTO("fail", "오류 발생: " + e.getMessage()));
         }
     }
+
     @PostMapping("/config") // POST 요청 처리
     public ResponseEntity<?> uploadLectureConfig(@RequestBody LectureConfigRequestDTO request) {
         // 👉 여기에 실제 저장/처리 로직을 넣으면 됨

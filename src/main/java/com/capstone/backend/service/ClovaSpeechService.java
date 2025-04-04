@@ -16,7 +16,9 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -29,7 +31,67 @@ public class ClovaSpeechService {
     @Value("${clova.base-url}")
     private String baseUrl;
 
-    public String sendAudioToClova(File audioFile) {
+    public String sendAudioToClova(InputStream audioStream) {
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(10 * 1000)
+                .setConnectionRequestTimeout(10 * 1000)
+                .setSocketTimeout(180 * 1000)
+                .build();
+
+        try (CloseableHttpClient httpClient = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .build()) {
+
+            HttpPost httpPost = new HttpPost(baseUrl + "/recognizer/upload");
+            httpPost.setHeader(new BasicHeader("Accept", "application/json"));
+            httpPost.setHeader(new BasicHeader("X-CLOVASPEECH-API-KEY", secretKey));
+
+            // InputStream → byte[]
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            audioStream.transferTo(buffer);
+            byte[] audioBytes = buffer.toByteArray();
+
+            // Clova 요청 파라미터
+            String paramsJson = """
+        {
+          "language": "ko-KR",
+          "completion": "sync",
+          "wordAlignment": false,
+          "fullText": true,
+          "diarization": {
+            "enable": false
+          }
+        }
+        """;
+
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            builder.setCharset(StandardCharsets.UTF_8);
+            builder.addTextBody("params", paramsJson, ContentType.APPLICATION_JSON);
+            builder.addBinaryBody("media", audioBytes, ContentType.create("audio/mpeg"), "lecture.mp3");
+
+            HttpEntity multipart = builder.build();
+            httpPost.setEntity(multipart);
+
+            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+                int statusCode = response.getStatusLine().getStatusCode();
+                String responseBody = EntityUtils.toString(response.getEntity());
+
+                if (statusCode == 200) {
+                    JsonNode jsonNode = new ObjectMapper().readTree(responseBody);
+                    return jsonNode.get("text").asText();
+                } else {
+                    log.error("Clova API Error: {}", responseBody);
+                    throw new RuntimeException("Clova API 호출 실패 - 상태 코드: " + statusCode);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Clova 호출 중 예외 발생", e);
+            throw new RuntimeException("Clova 호출 중 오류 발생", e);
+        }
+    }
+
+
+    public String sendAudioToClova2(File audioFile) {
         // 타임아웃 설정: 3분 (180초)
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(10 * 1000)
@@ -86,74 +148,6 @@ public class ClovaSpeechService {
         } catch (Exception e) {
             log.error("Clova 호출 중 예외 발생", e);
             throw new RuntimeException("Clova 호출 중 오류 발생", e);
-        }
-    }
-
-    /**
-     *
-     * 이 밑으로 temp와 함께 전부 삭제 예정
-     */
-
-    public String sendAudioToClova2(File wavFile) {
-        // 👇 타임아웃 설정: 3분 (180초)
-        RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(10 * 1000)                // 서버 연결 최대 10초
-                .setConnectionRequestTimeout(10 * 1000)      // 커넥션 풀 대기 최대 10초
-                .setSocketTimeout(180 * 1000)                // 데이터 응답 최대 대기 시간: 3분
-                .build();
-
-        try (CloseableHttpClient httpClient = HttpClients.custom()
-                .setDefaultRequestConfig(requestConfig)
-                .build()) {
-
-            HttpPost httpPost = new HttpPost(baseUrl + "/recognizer/upload");
-            httpPost.setHeader(new BasicHeader("Accept", "application/json"));
-            httpPost.setHeader(new BasicHeader("X-CLOVASPEECH-API-KEY", secretKey));
-
-            String paramsJson = """
-            {
-              "language": "ko-KR",
-              "completion": "sync",
-              "wordAlignment": true,
-              "fullText": true,
-              "diarization": {
-                "enable": false
-              }
-            }
-        """;
-
-            HttpEntity entity = MultipartEntityBuilder.create()
-                    .addTextBody("params", paramsJson, ContentType.APPLICATION_JSON)
-                    .addBinaryBody("media", wavFile, ContentType.create("audio/wav"), wavFile.getName())
-                    .build();
-
-            httpPost.setEntity(entity);
-
-            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-                String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                log.info("📢 Clova 응답 결과: {}", responseBody);
-                return responseBody;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Clova 요청 중 오류 발생: " + e.getMessage(), e);
-        }
-    }
-
-    public String recognizeSpeech(File wavFile) {
-        String responseJson = sendAudioToClova(wavFile);
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(responseJson);
-
-            JsonNode fullTextNode = root.path("text");
-            if (!fullTextNode.isMissingNode()) {
-                return fullTextNode.asText();
-            } else {
-                throw new RuntimeException("Clova 응답에서 fullText를 찾을 수 없습니다.");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Clova 응답 파싱 실패: " + e.getMessage(), e);
         }
     }
 }
