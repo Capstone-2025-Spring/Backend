@@ -1,8 +1,13 @@
 package com.capstone.backend.controller;
 
+import com.capstone.backend.dto.LectureEvaluationMP3RequestDTO;
 import com.capstone.backend.dto.LectureEvaluationRequestDTO;
+import com.capstone.backend.dto.LectureFeedbackResultDTO;
+import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
+import com.capstone.backend.service.ClovaSpeechService;
 import com.capstone.backend.service.GptService;
 import com.capstone.backend.service.LectureFeedbackService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,44 +18,71 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/lecture")
 public class LectureFeedbackController {
 
-    private final LectureFeedbackService lectureFeedbackService;
+    private final ClovaSpeechService clovaSpeechService;
     private final GptService gptService;
 
-    @PostMapping("/feedback")
-    public ResponseEntity<String> uploadLectureAndGetFeedback(@RequestParam("file") MultipartFile file) {
-        try {
-            // 1. 파일 타입 확인 (확장자, Content-Type)
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
-                return ResponseEntity.badRequest().body("MP3 파일만 업로드 가능합니다.");
-            }
-
-            if (!file.getContentType().equalsIgnoreCase("audio/mpeg")) {
-                return ResponseEntity.badRequest().body("Content-Type은 audio/mpeg(MP3) 형식이어야 합니다.");
-            }
-
-            // 2. 서비스에 InputStream으로 바로 넘김
-            String feedback = lectureFeedbackService.generateFeedbackFromLecture(file.getInputStream());
-
-            return ResponseEntity.ok(feedback);
-
-        } catch (Exception e) {
-            e.printStackTrace(); // 디버깅용 로그
-            return ResponseEntity.internalServerError().body("서버 처리 중 오류 발생: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/prompt/test")
-    public ResponseEntity<String> getFullEvaluationPipeline(@RequestBody LectureEvaluationRequestDTO requestDTO) {
+    @PostMapping("/feedback/text")
+    public ResponseEntity<LectureFeedbackResultDTO> getFullEvaluationPipelineByText(@RequestBody LectureEvaluationRequestDTO requestDTO) {
         try {
             String result = gptService.runFullEvaluationPipeline(
                     requestDTO.getLectureText(),
                     requestDTO.getAudioInfo(),
                     requestDTO.getMotionInfo()
             );
-            return ResponseEntity.ok(result);
+
+            LectureFeedbackResultDTO responseDto = new LectureFeedbackResultDTO();
+            responseDto.setResult(result);
+
+            return ResponseEntity.ok(responseDto);
+
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("에러 발생: " + e.getMessage());
+            LectureFeedbackResultDTO errorDto = new LectureFeedbackResultDTO();
+            errorDto.setResult("에러 발생: " + e.getMessage());
+
+            return ResponseEntity.internalServerError().body(errorDto);
         }
     }
+
+    @PostMapping(value = "/feedback/mp3", consumes = "multipart/form-data")
+    public ResponseEntity<LectureFeedbackResultDTO> getFullEvaluationPipelineByMP3(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("json") String requestJson // LectureEvaluationMP3RequestDTO를 JSON 문자열로 받음
+    ) {
+        try {
+            // 1. 파일 확장자 검사
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
+                LectureFeedbackResultDTO errorDto = new LectureFeedbackResultDTO();
+                errorDto.setResult("MP3 파일만 업로드 가능합니다.");
+                return ResponseEntity.badRequest().body(errorDto);
+            }
+
+            // 2. 파일 → Clova STT
+            String transcript = clovaSpeechService.sendAudioToClova(file.getInputStream());
+
+            // 3. JSON 문자열 → DTO 변환
+            ObjectMapper objectMapper = new ObjectMapper();
+            LectureEvaluationMP3RequestDTO requestDTO = objectMapper.readValue(requestJson, LectureEvaluationMP3RequestDTO.class);
+
+            // 4. GPT 파이프라인 실행
+            String result = gptService.runFullEvaluationPipeline(
+                    transcript,
+                    requestDTO.getAudioInfo(),
+                    requestDTO.getMotionInfo()
+            );
+
+            // 5. 응답 DTO 생성
+            LectureFeedbackResultDTO responseDto = new LectureFeedbackResultDTO();
+            responseDto.setResult(result);
+
+            return ResponseEntity.ok(responseDto);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            LectureFeedbackResultDTO errorDto = new LectureFeedbackResultDTO();
+            errorDto.setResult("에러 발생: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorDto);
+        }
+    }
+
 }
