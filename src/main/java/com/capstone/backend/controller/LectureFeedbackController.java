@@ -27,7 +27,9 @@ public class LectureFeedbackController {
             String result = gptService.runFullEvaluationPipeline(
                     requestDTO.getLectureText(),
                     requestDTO.getAudioInfo(),
-                    requestDTO.getMotionInfo()
+                    requestDTO.getMotionInfo(),
+                    "",
+                    ""
             );
 
             LectureFeedbackResultDTO responseDto = new LectureFeedbackResultDTO();
@@ -68,7 +70,9 @@ public class LectureFeedbackController {
             String result = gptService.runFullEvaluationPipeline(
                     transcript,
                     requestDTO.getAudioInfo(),
-                    requestDTO.getMotionInfo()
+                    requestDTO.getMotionInfo(),
+                    "",
+                    ""
             );
 
             // 5. 응답 DTO 생성

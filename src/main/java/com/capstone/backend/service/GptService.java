@@ -37,6 +37,7 @@ public class GptService {
             - 억양, 강세 등 음성적 요소의 전달력
             - 모션/표정과의 연계성
             - 청중과의 상호작용을 유도하는 말투/어조
+            - {criteria}
                                           
             평가는 다음 조건을 충족해야 합니다:
             - **텍스트, 음성, 모션** 정보를 균형 있게 분석할 것
@@ -70,14 +71,15 @@ public class GptService {
             어휘의 명확성
             맥락에 맞는 적절성           
             어휘의 다양성   
-            학습자 흥미 유발 
+            학습자 흥미 유발
+            {criteria}
             
-            평가 양식 (각 항목에 대해 1~2줄의 설명 작성):    
-            어휘 명확성 (1-10점):
-            맥락에 맞는 적절성 (1~10점):
-            어휘의 다양성 (1~10점):
-            학습자 흥미 유발 (1~10점): 
-            
+            평가 양식 (각 항목에 대해 1-10점의 점수 부여 및 1~2줄의 설명 작성):    
+            어휘 명확성
+            맥락에 맞는 적절성
+            어휘의 다양성
+            학습자 흥미 유발
+            {criteria} 
             """;
     private String promptTemplateRef = """
             다음은 한 강의 장면에 대한 평가자 에이전트의 평가 결과입니다.
@@ -115,10 +117,10 @@ public class GptService {
     private String promptTemplateFact = """
             당신은 전문가 수준의 팩트체커입니다. 아래 두 가지 텍스트가 주어집니다:
                         
-            1. Reference (참조): 사실에 기반한 원문 (강의 교안, 파일 형식으로 제공 예정)
+            1. Reference (참조): 사실에 기반한 원문 (강의 교안)
             2. Hypothesis (가설): 생성된 강의 내용 텍스트 (강사의 발화 텍스트, STT 기반)
                         
-            당신의 과제는 다음 4가지 평가 항목에 대해 1점에서 5점까지 점수를 매기고, 각 항목별로 간단한 이유(설명)를 작성하는 것입니다:
+            당신의 과제는 다음 평가 항목에 대해 1점에서 5점까지 점수를 매기고, 각 항목별로 간단한 이유(설명)를 작성하는 것입니다:
                         
             1. 사실 일치도 (Factual Consistency): 가설의 정보가 참조 문서의 내용과 일치하는가?
             2. 형용사 사용의 적절성 (Adjective Regularity): 형용사가 과장되지 않고 적절하게 사용되었는가?
@@ -147,13 +149,13 @@ public class GptService {
             설명: [이유]
             """;
 
-    public String runFullEvaluationPipeline(String lectureText, String audioInfo, String motionInfo) {
+    public String runFullEvaluationPipeline(String lectureText, String audioInfo, String motionInfo, String criteriaCoT, String criteriaGEval) {
         // Step 1: CoT 생성
-        String cot = getCoT(lectureText, audioInfo, motionInfo);
+        String cot = getCoT(lectureText, audioInfo, motionInfo, criteriaCoT);
         System.out.println("[1단계 - CoT 전문]\n" + cot);
 
         // Step 2: GEval 생성
-        String gEval = getGEval(cot, lectureText, audioInfo, motionInfo);
+        String gEval = getGEval(cot, lectureText, audioInfo, motionInfo, criteriaGEval);
         System.out.println("[2단계 - GEval 점수 및 설명]\n" + gEval);
 
         // Step 3: Ref 평가 (Meta-Evaluator)
@@ -164,15 +166,16 @@ public class GptService {
     }
 
 
-    public String fillCoTPromptPlaceholders(String lectureText, String audioInfo, String motionInfo) {
+    public String fillCoTPromptPlaceholders(String lectureText, String audioInfo, String motionInfo, String criteria) {
         return promptTemplateCoT
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
-                .replace("{motion}", motionInfo);
+                .replace("{motion}", motionInfo)
+                .replace("{criteria}", criteria);
     }
 
-    public String getCoT(String lectureText, String audioInfo, String motionInfo) {
-        String finalPrompt = fillCoTPromptPlaceholders(lectureText, audioInfo, motionInfo);
+    public String getCoT(String lectureText, String audioInfo, String motionInfo, String criteria) {
+        String finalPrompt = fillCoTPromptPlaceholders(lectureText, audioInfo, motionInfo, criteria);
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
                 "content", finalPrompt
@@ -200,16 +203,17 @@ public class GptService {
         return messageResp.get("content").toString().trim();
     }
 
-    public String fillGEvalPromptPlaceholders(String cot, String lectureText, String audioInfo, String motionInfo) {
+    public String fillGEvalPromptPlaceholders(String cot, String lectureText, String audioInfo, String motionInfo, String criteria) {
         return promptTemplateGEval
                 .replace("{CoT}", cot)
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
-                .replace("{motion}", motionInfo);
+                .replace("{motion}", motionInfo)
+                .replace("{criteria}", criteria);
     }
 
-    public String getGEval(String cot, String lectureText, String audioInfo, String motionInfo) {
-        String finalPrompt = fillGEvalPromptPlaceholders(cot, lectureText, audioInfo, motionInfo);
+    public String getGEval(String cot, String lectureText, String audioInfo, String motionInfo, String criteria) {
+        String finalPrompt = fillGEvalPromptPlaceholders(cot, lectureText, audioInfo, motionInfo, criteria);
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
                 "content", finalPrompt
