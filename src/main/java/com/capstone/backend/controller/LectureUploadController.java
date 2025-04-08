@@ -1,17 +1,15 @@
 package com.capstone.backend.controller;
 
 import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
-import com.capstone.backend.dto.LectureConfigRequestDTO;
+import com.capstone.backend.dto.ConfigRequestDTO;
 import com.capstone.backend.dto.LectureUploadConfigRespondDTO;
+import com.capstone.backend.entity.Config;
 import com.capstone.backend.service.ClovaSpeechService;
+import com.capstone.backend.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/upload")
@@ -19,6 +17,7 @@ import java.nio.file.Paths;
 public class LectureUploadController {
 
     private final ClovaSpeechService clovaSpeechService;
+    private final ConfigService configService;
 
     @PostMapping("/audio")
     public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
@@ -45,10 +44,12 @@ public class LectureUploadController {
     }
 
     @PostMapping("/config") // POST 요청 처리
-    public ResponseEntity<?> uploadLectureConfig(@RequestBody LectureConfigRequestDTO request) {
+    public ResponseEntity<?> uploadLectureConfig(@RequestBody ConfigRequestDTO request) {
         // 👉 여기에 실제 저장/처리 로직을 넣으면 됨
 
         // 예시 로그 출력
+        Config saved = configService.save(request);
+
         System.out.println("📥 수신된 설정: " + request);
 
         // 응답 반환
