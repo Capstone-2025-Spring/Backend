@@ -84,7 +84,7 @@ public class PromptTemplateInitializer implements CommandLineRunner {
             평가 양식 (각 항목에 대해 1-10점의 점수 부여 및 1~2줄의 설명 작성):
             {criteria} 
             """);
-        initPrompt("Ref", """
+        initPrompt("SAGEval", """
             다음은 한 강의 장면에 대한 평가자 에이전트의 평가 결과입니다.
             입력은 음성, 움직임, 언어 등의 요소로 구성된 멀티모달 데이터입니다.
             각 항목의 점수와 그에 대한 이유가 포함되어 있습니다.

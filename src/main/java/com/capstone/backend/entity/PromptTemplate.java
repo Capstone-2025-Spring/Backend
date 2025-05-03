@@ -13,7 +13,7 @@ public class PromptTemplate {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String type; // CoT, GEval, Ref, Fact
+    private String type; // CoT, GEval, SAGEval, Fact
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;

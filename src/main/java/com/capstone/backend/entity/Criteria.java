@@ -12,7 +12,7 @@ public class Criteria {
     private Long id;
 
     @Column(nullable = false)
-    private String type; // CoT, GEval, Ref, Fact + User
+    private String type; // CoT, GEval, SAGEval, Fact + User
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
