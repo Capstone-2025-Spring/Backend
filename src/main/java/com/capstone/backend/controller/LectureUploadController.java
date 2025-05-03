@@ -1,9 +1,6 @@
 package com.capstone.backend.controller;
 
-import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
-import com.capstone.backend.dto.ConfigRequestDTO;
-import com.capstone.backend.dto.LectureUploadConfigRespondDTO;
-import com.capstone.backend.dto.HolisticDataDTO;
+import com.capstone.backend.dto.*;
 import com.capstone.backend.entity.Config;
 import com.capstone.backend.service.ClovaSpeechService;
 import com.capstone.backend.service.ConfigService;
@@ -20,23 +17,20 @@ public class LectureUploadController {
     private final ClovaSpeechService clovaSpeechService;
     private final ConfigService configService;
 
+    // 🎧 오디오 업로드 및 STT 처리
     @PostMapping("/audio")
     public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
         try {
-            // 파일 확장자 검사
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
                 return ResponseEntity.badRequest()
                         .body(new LectureUploadAudioRespondDTO("fail", "MP3 파일만 업로드 가능합니다."));
             }
 
-            // Clova에 InputStream 직접 전달
+            // Clova API로 STT 수행
             String transcript = clovaSpeechService.sendAudioToClova(file.getInputStream());
 
-            // 응답 생성
-            LectureUploadAudioRespondDTO responseDto = new LectureUploadAudioRespondDTO("success", transcript);
-            return ResponseEntity.ok(responseDto);
-
+            return ResponseEntity.ok(new LectureUploadAudioRespondDTO("success", transcript));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError()
@@ -44,30 +38,24 @@ public class LectureUploadController {
         }
     }
 
-    @PostMapping("/config") // POST 요청 처리
-    public ResponseEntity<?> uploadLectureConfig(@RequestBody ConfigRequestDTO request) {
-        // 👉 여기에 실제 저장/처리 로직을 넣으면 됨
-
-        // 예시 로그 출력
+    // ⚙️ 설정 저장
+    @PostMapping("/config")
+    public ResponseEntity<LectureUploadConfigRespondDTO> uploadLectureConfig(@RequestBody ConfigRequestDTO request) {
         Config saved = configService.save(request);
-
         System.out.println("📥 수신된 설정: " + request);
-
-        // 응답 반환
         return ResponseEntity.ok(new LectureUploadConfigRespondDTO("success"));
     }
 
+    // 🧍‍♂️ 포즈 랜드마크 업로드
     @PostMapping("/holistic")
     public ResponseEntity<String> uploadHolisticData(@RequestBody HolisticDataDTO request) {
-        // 👉 요청 데이터 로그
         System.out.println("📥 Holistic Data Received:");
         System.out.println("Video ID: " + request.getVideoId());
-        System.out.println("Pose Count: " + (request.getPoseLandmarks() != null ? request.getPoseLandmarks().size() : 0));
+        System.out.println("Pose Count: " +
+                (request.getHolisticData() != null ? request.getHolisticData().size() : 0));
 
-        // 👉 여기서 저장 or 처리 로직 수행
-        // 예: holisticDataService.save(request);
+        // TODO: holisticDataService.save(request);
 
         return ResponseEntity.ok("Holistic data received successfully");
     }
-
 }
