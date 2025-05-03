@@ -77,8 +77,8 @@ def run_captioning_from_json(json_data):
         label_id = predictions[-1]
         caption_lines.append(f"[{t1}:{t2}] {label_id}")
 
-    return caption_lines
+    return "".join(caption_lines)
 
-  
+
 def format_ms(ms):
     return datetime.fromtimestamp(ms / 1000).strftime("%H:%M:%S")

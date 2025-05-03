@@ -30,6 +30,7 @@ def analyze_audio(file_path):
         zcr = librosa.feature.zero_crossing_rate(y)
         zcr_mean = float(np.mean(zcr))
 
+        """
         # 스펙트로그램 저장
         stft = librosa.stft(y)
         db = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
@@ -42,17 +43,20 @@ def analyze_audio(file_path):
         plt.tight_layout()
         plt.savefig(spectrogram_path)
         plt.close()
+        """
 
+        """
         shimmer_val = get_shimmer(file_path)
         if shimmer_val is None or math.isnan(shimmer_val):
             shimmer_val = "unavailable"
+        """
 
         return {
             "sample_rate": sr,
             "duration": duration,
             "zcr_mean": zcr_mean,
-            "shimmer": shimmer_val,
-            "spectrogram_path": os.path.basename(spectrogram_path)
+            "shimmer": "",
+            #"spectrogram_path": os.path.basename(spectrogram_path)
         }
 
     except Exception as e:

@@ -18,7 +18,18 @@ public class PromptTemplateInitializer implements CommandLineRunner {
             다음은 하나의 강의 장면에서 수집된 멀티모달 데이터입니다:
             - 강의 텍스트(STT 변환): {text}
             - 음성 분석 결과(속도, 억양, 강조 등): {audio}
-            - 제스처 및 표정 등 모션 분석 요약: {motion}
+            - 제스처 및 표정 등 모션 분석 요약
+              (
+                모션 데이터 형식은 다음과 같다. [mm:ss] [mm:ss] : label
+                label_map = {
+                    0: "서있음음",
+                    1: "손 머리에 대는 중",
+                    2: "뒤 돌고 있음",
+                    3: "팔짱끼는 중",
+                }
+              ): {motion}
+            
+            
                                           
             당신의 과제는 이 데이터를 기반으로, **강사의 언어적 전달력**을 평가하기 위한 **Chain-of-Thought 방식의 평가 절차(가이드라인)**를 단계별로 설계하는 것입니다.
                                           
@@ -50,7 +61,16 @@ public class PromptTemplateInitializer implements CommandLineRunner {
             
             모의 강의 데이터
             - 강의 Speech-To-Text 전문: {text}
-            - 모션 동작 데이터: {motion}
+            - 모션 동작 데이터
+              (
+                모션 데이터 형식은 다음과 같다. [mm:ss] [mm:ss] : label
+                label_map = {
+                    0: "서있음음",
+                    1: "손 머리에 대는 중",
+                    2: "뒤 돌고 있음",
+                    3: "팔짱끼는 중",
+                }
+              ): {motion}
             - 음성 분석 데이터: {audio} 
             
             평가 기준:
@@ -58,6 +78,7 @@ public class PromptTemplateInitializer implements CommandLineRunner {
             맥락에 맞는 적절성           
             어휘의 다양성   
             학습자 흥미 유발
+            비언어적 표현 적절성
             {criteria}
             
             평가 양식 (각 항목에 대해 1-10점의 점수 부여 및 1~2줄의 설명 작성):
@@ -76,7 +97,16 @@ public class PromptTemplateInitializer implements CommandLineRunner {
             **[1] 입력 데이터 (Hypothesis)**
             - 텍스트 요약: {text}
             - 음성 분석 결과 요약: {audio}
-            - Holistic 움직임 분석 요약: {motion}
+            - Holistic 움직임 분석 요약
+              (
+                모션 데이터 형식은 다음과 같다. [mm:ss] [mm:ss] : label
+                label_map = {
+                    0: "서있음음",
+                    1: "손 머리에 대는 중",
+                    2: "뒤 돌고 있음",
+                    3: "팔짱끼는 중",
+                }
+              ): {motion}
                         
             ---
                         

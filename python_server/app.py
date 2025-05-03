@@ -41,34 +41,24 @@ def analyze_audio_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/generate-caption', methods=['POST']) #POST 요청API
+@app.route('/generate-caption', methods=['POST'])
 def generate_caption():
-    if 'file' not in request.files: #파일 업로드가 안됨
+    if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
-    file = request.files['file'] 
-    if file.filename == '': #파일 이름이 비어있음
+    file = request.files['file']
+    if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
     try:
-        json_data = json.load(file) #json파일 로드드
-        captions = run_captioning_from_json(json_data) #딥러닝 기반 예측 수행 및 캡션 생성
+        json_data = json.load(file)
+        caption_string = run_captioning_from_json(json_data)  # caption_lines를 문자열로 합침
 
-        # 메모리 내 텍스트 파일 생성. 디스크에 저장하지 않음
-        caption_text = "\n".join(captions)
-        buffer = io.BytesIO()
-        buffer.write(caption_text.encode('utf-8'))
-        buffer.seek(0)
-
-        return send_file(
-            buffer,
-            as_attachment=True,
-            download_name="caption.txt",
-            mimetype='text/plain'
-        )
+        return jsonify({"motionInfo": caption_string})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

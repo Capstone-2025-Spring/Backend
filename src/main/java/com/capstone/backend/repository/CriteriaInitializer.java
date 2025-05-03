@@ -29,7 +29,8 @@ public class CriteriaInitializer {
                         "맥락에 맞는 적절성",
                         "문장 구성, 구조의 적절성",
                         "청중과의 상호작용",
-                        "음성적 요소의 전달력"
+                        "음성적 요소의 전달력",
+                        "비언어적 표현의 적절성"
                 ),
                 "Fact", List.of(
                         "사실 일치도 (Factual Consistency): 가설의 정보가 참조 문서의 내용과 일치하는가?",

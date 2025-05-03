@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class LectureEvaluationMP3RequestDTO {
-    private String audioInfo;
+    // private String audioInfo;
     private String motionInfo;
 }

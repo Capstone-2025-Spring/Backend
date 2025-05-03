@@ -1,6 +1,7 @@
 package com.capstone.backend.service;
 
 import com.capstone.backend.config.OpenAiProperties;
+import com.capstone.backend.entity.PromptTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +20,8 @@ public class GptService {
 
     private final OpenAiProperties openAiProperties;
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
+
+    private final PromptTemplateService promptTemplateService;
 
     private String promptTemplateCoT = """
             당신은 교육 분야의 AI 평가 전문가입니다.
@@ -167,7 +170,9 @@ public class GptService {
 
 
     public String fillCoTPromptPlaceholders(String lectureText, String audioInfo, String motionInfo, String criteria) {
-        return promptTemplateCoT
+        PromptTemplate template = promptTemplateService.getByType("CoT");
+
+        return template.getContent()
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
                 .replace("{motion}", motionInfo)
@@ -204,7 +209,8 @@ public class GptService {
     }
 
     public String fillGEvalPromptPlaceholders(String cot, String lectureText, String audioInfo, String motionInfo, String criteria) {
-        return promptTemplateGEval
+        PromptTemplate template = promptTemplateService.getByType("GEval");
+        return template.getContent()
                 .replace("{CoT}", cot)
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
@@ -242,7 +248,8 @@ public class GptService {
     }
 
     public String fillRefPromptPlaceholders(String gEval, String lectureText, String audioInfo, String motionInfo) {
-        return promptTemplateRef
+        PromptTemplate template = promptTemplateService.getByType("Ref");
+        return template.getContent()
                 .replace("{gEval}", gEval)
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
@@ -283,10 +290,11 @@ public class GptService {
      */
 
     public String getFact(String lectureText) {
+        PromptTemplate template = promptTemplateService.getByType("Fact");
 
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
-                "content", promptTemplateFact
+                "content", template.getContent()
         );
 
         Map<String, Object> userMessage = Map.of(
