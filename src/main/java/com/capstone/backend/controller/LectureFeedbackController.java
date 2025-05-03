@@ -1,5 +1,5 @@
 package com.capstone.backend.controller;
-
+import com.capstone.backend.dto.ConfigRequestDTO;
 import com.capstone.backend.dto.LectureEvaluationMP3RequestDTO;
 import com.capstone.backend.dto.LectureEvaluationRequestDTO;
 import com.capstone.backend.dto.LectureFeedbackResultDTO;
