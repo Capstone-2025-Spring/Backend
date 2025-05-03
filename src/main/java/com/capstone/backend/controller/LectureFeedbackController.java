@@ -69,7 +69,8 @@ public class LectureFeedbackController {
     @PostMapping(value = "/feedback/mp3", consumes = "multipart/form-data")
     public ResponseEntity<LectureFeedbackResultDTO> getFullEvaluationPipelineByMP3(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("holistic") MultipartFile holistic
+            @RequestParam("holistic") MultipartFile holistic,
+            @RequestParam("config") MultipartFile config //config 파일도 수신
     ) {
         try {
             // 1. 파일 유효성 검사
@@ -79,6 +80,9 @@ public class LectureFeedbackController {
                 errorDto.setResult("MP3 파일만 업로드 가능합니다.");
                 return ResponseEntity.badRequest().body(errorDto);
             }
+            //Config 파일 Dto 파싱
+            ObjectMapper objectMapper = new ObjectMapper();
+            ConfigRequestDTO configDto = objectMapper.readValue(config.getBytes(), ConfigRequestDTO.class);
 
             // 2. MultipartFile을 File로 저장
             File mp3File = convertToTempFile(file);
