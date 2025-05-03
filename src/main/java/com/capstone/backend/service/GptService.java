@@ -165,7 +165,7 @@ public class GptService {
         String finalRefinedEvaluation = getRef(gEval, lectureText, audioInfo, motionInfo);
         System.out.println("[3단계 - Meta 평가 결과]\n" + finalRefinedEvaluation);
 
-        return finalRefinedEvaluation;
+        return cot + "\n\n" + gEval + "\n\n" + finalRefinedEvaluation;
     }
 
 
