@@ -3,6 +3,7 @@ package com.capstone.backend.controller;
 import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
 import com.capstone.backend.dto.ConfigRequestDTO;
 import com.capstone.backend.dto.LectureUploadConfigRespondDTO;
+import com.capstone.backend.dto.HolisticDataDTO;
 import com.capstone.backend.entity.Config;
 import com.capstone.backend.service.ClovaSpeechService;
 import com.capstone.backend.service.ConfigService;
