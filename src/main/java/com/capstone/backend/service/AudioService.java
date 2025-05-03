@@ -15,7 +15,7 @@ import java.util.Map;
 public class AudioService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String flaskBaseUrl = "http://localhost:5000";
+    private final String flaskBaseUrl = "http:3.39.25.136//:5000";
 
     /**
      * MP3 파일을 분석하고 결과(JSON)를 반환합니다.
