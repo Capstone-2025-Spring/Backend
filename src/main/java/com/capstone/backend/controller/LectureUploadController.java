@@ -55,4 +55,18 @@ public class LectureUploadController {
         // 응답 반환
         return ResponseEntity.ok(new LectureUploadConfigRespondDTO("success"));
     }
+
+    @PostMapping("/holistic")
+    public ResponseEntity<String> uploadHolisticData(@RequestBody HolisticDataDTO request) {
+        // 👉 요청 데이터 로그
+        System.out.println("📥 Holistic Data Received:");
+        System.out.println("Video ID: " + request.getVideoId());
+        System.out.println("Pose Count: " + (request.getPoseLandmarks() != null ? request.getPoseLandmarks().size() : 0));
+
+        // 👉 여기서 저장 or 처리 로직 수행
+        // 예: holisticDataService.save(request);
+
+        return ResponseEntity.ok("Holistic data received successfully");
+    }
+
 }
