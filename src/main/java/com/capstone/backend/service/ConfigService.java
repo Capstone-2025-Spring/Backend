@@ -17,7 +17,7 @@ public class ConfigService {
 
     public Config save(ConfigRequestDTO dto) {
 
-        // 유저 기준 저장
+        // user_criteria 저장
         if (dto.getUser_criteria() != null) {
             for (String content : dto.getUser_criteria()) {
                 if (!criteriaRepository.existsByTypeAndContent("User", content)) {
@@ -31,6 +31,7 @@ public class ConfigService {
 
         // Config 저장
         Config config = Config.builder()
+                .title(dto.getTitle())
                 .category(dto.getCategory())
                 .schoolLevel(dto.getSchool_level())
                 .subject(dto.getSubject())

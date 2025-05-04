@@ -15,6 +15,7 @@ public class Config {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String title;
     private String category;
 
     private String schoolLevel;
@@ -24,9 +25,8 @@ public class Config {
     private String studentType;
 
     private int difficulty;
-
     private boolean audioEnabled;
     private boolean videoEnabled;
 
-    private String pdfFile;  // DB에 null 저장 허용
+    private String pdfFile;
 }

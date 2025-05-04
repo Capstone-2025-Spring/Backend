@@ -10,6 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConfigRequestDTO {
+    private String title;
     private String category;
     private String school_level;
     private String subject;
@@ -20,5 +21,5 @@ public class ConfigRequestDTO {
     private int difficulty;
     private boolean audio_enabled;
     private boolean video_enabled;
-    private String pdf_file;  // 선택 사항이므로 nullable 허용
+    private String pdf_file;
 }
