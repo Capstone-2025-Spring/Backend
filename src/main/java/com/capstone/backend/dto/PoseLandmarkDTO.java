@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PoseLandmark {
+public class PoseLandmarkDTO {
     private double x;
     private double y;
     private double z;

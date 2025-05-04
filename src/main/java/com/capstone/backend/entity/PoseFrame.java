@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PoseFrameEntity {
+public class PoseFrame {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,5 +23,5 @@ public class PoseFrameEntity {
     private Holistic holistic;
 
     @OneToMany(mappedBy = "poseFrame", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PoseLandmarkEntity> results;
+    private List<PoseLandmark> results;
 }

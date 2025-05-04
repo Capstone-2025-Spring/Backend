@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PoseFrame {
+public class PoseFrameDTO {
     private long timestamp;
-    private List<PoseLandmark> results;
+    private List<PoseLandmarkDTO> results;
 }

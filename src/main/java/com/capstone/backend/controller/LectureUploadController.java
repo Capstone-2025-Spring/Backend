@@ -4,6 +4,7 @@ import com.capstone.backend.dto.*;
 import com.capstone.backend.entity.Config;
 import com.capstone.backend.service.ClovaSpeechService;
 import com.capstone.backend.service.ConfigService;
+import com.capstone.backend.service.HolisticService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,10 +17,11 @@ public class LectureUploadController {
 
     private final ClovaSpeechService clovaSpeechService;
     private final ConfigService configService;
+    private final HolisticService holisticService;
 
     // 🎧 오디오 업로드 및 STT 처리
-    @PostMapping("/audio")
-    public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudio(@RequestParam MultipartFile file) {
+    @PostMapping("/audio-clova")
+    public ResponseEntity<LectureUploadAudioRespondDTO> uploadLectureAudioToClova(@RequestParam MultipartFile file) {
         try {
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
@@ -54,8 +56,17 @@ public class LectureUploadController {
         System.out.println("Pose Count: " +
                 (request.getHolisticData() != null ? request.getHolisticData().size() : 0));
 
-        // TODO: holisticDataService.save(request);
+        // 중복 체크
+        if (holisticService.existsByVideoId(request.getVideoId())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("❌ 이미 저장된 videoId입니다: " + request.getVideoId());
+        }
 
-        return ResponseEntity.ok("Holistic data received successfully");
+        // 저장
+        holisticService.save(request);
+
+        return ResponseEntity.ok("✅ Holistic data 저장 완료: " + request.getVideoId());
     }
+
 }

@@ -84,7 +84,7 @@ public class GptService {
             학습자 흥미 유발
             {criteria} 
             """;
-    private String promptTemplateRef = """
+    private String promptTemplateSAGEval = """
             다음은 한 강의 장면에 대한 평가자 에이전트의 평가 결과입니다.
             입력은 음성, 움직임, 언어 등의 요소로 구성된 멀티모달 데이터입니다.
             각 항목의 점수와 그에 대한 이유가 포함되어 있습니다.
@@ -161,11 +161,11 @@ public class GptService {
         String gEval = getGEval(cot, lectureText, audioInfo, motionInfo, criteriaGEval);
         System.out.println("[2단계 - GEval 점수 및 설명]\n" + gEval);
 
-        // Step 3: Ref 평가 (Meta-Evaluator)
-        String finalRefinedEvaluation = getRef(gEval, lectureText, audioInfo, motionInfo);
-        System.out.println("[3단계 - Meta 평가 결과]\n" + finalRefinedEvaluation);
+        // Step 3: SAGEval 평가 (Meta-Evaluator)
+        String SAGEval = getSAGEval(gEval, lectureText, audioInfo, motionInfo);
+        System.out.println("[3단계 - Meta 평가 결과]\n" + SAGEval);
 
-        return "[1단계 - CoT 전문]\n" + cot + "[2단계 - GEval 점수 및 설명]\n" + gEval + "[3단계 - Meta 평가 결과]\n" + finalRefinedEvaluation;
+        return "[SST]\n" + lectureText + "\n[AudioInfo]\n" + audioInfo + "\n[MotionInfo]\n" + motionInfo + "\n[1단계 - CoT 전문]\n" + cot + "\n[2단계 - GEval 점수 및 설명]\n" + gEval + "\n[3단계 - Meta 평가 결과]\n" + SAGEval;
     }
 
 
@@ -247,8 +247,8 @@ public class GptService {
         return messageResp.get("content").toString().trim();
     }
 
-    public String fillRefPromptPlaceholders(String gEval, String lectureText, String audioInfo, String motionInfo) {
-        PromptTemplate template = promptTemplateService.getByType("Ref");
+    public String fillSAGEvalPromptPlaceholders(String gEval, String lectureText, String audioInfo, String motionInfo) {
+        PromptTemplate template = promptTemplateService.getByType("SAGEval");
         return template.getContent()
                 .replace("{gEval}", gEval)
                 .replace("{text}", lectureText)
@@ -256,8 +256,8 @@ public class GptService {
                 .replace("{motion}", motionInfo);
     }
 
-    public String getRef(String gEval, String lectureText, String audioInfo, String motionInfo) {
-        String finalPrompt = fillRefPromptPlaceholders(gEval, lectureText, audioInfo, motionInfo);
+    public String getSAGEval(String gEval, String lectureText, String audioInfo, String motionInfo) {
+        String finalPrompt = fillSAGEvalPromptPlaceholders(gEval, lectureText, audioInfo, motionInfo);
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
                 "content", finalPrompt

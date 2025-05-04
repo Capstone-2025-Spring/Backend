@@ -17,6 +17,8 @@ public class MotionService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final String flaskUrl = "http://3.39.25.136:5000/generate-caption";
 
+    //private final String flaskUrl = "http://localhost:5000/generate-caption";
+
     public String getCaptionResult(byte[] jsonFileBytes) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);

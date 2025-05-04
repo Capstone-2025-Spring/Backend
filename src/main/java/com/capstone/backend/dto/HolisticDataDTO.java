@@ -16,5 +16,5 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HolisticDataDTO {
     private String videoId;
-    private List<PoseFrame> holisticData;
+    private List<PoseFrameDTO> holisticData;
 }
