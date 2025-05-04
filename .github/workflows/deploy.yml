@@ -59,25 +59,16 @@ jobs:
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/python_server/
 
       # ✅ 10. Python 의존성 설치 및 서비스 재시작
-      - name: Install Python dependencies & restart Python service
+      - name: Restart Python server only (reuse venv)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            echo "🐍 Python 서버 의존성 설치"
+            echo "🐍 Python 서버 재시작 (venv 재사옹)"
             cd /home/ec2-user/python_server
-
-            if [ ! -d "venv" ]; then
-              python3 -m venv venv
-            fi
-
             source venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt
-
-            echo "🔁 Python 서비스 재시작"
             sudo systemctl restart python.service
 
       # 11. Spring 백엔드 서비스 재시작
