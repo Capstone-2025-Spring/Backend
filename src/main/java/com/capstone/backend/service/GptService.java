@@ -152,35 +152,37 @@ public class GptService {
             설명: [이유]
             """;
 
-    public String runFullEvaluationPipeline(String lectureText, String audioInfo, String motionInfo, String criteriaCoT, String criteriaGEval) {
+    public String runFullEvaluationPipeline(String lectureText, String audioInfo, String motionInfo, String configInfo, String criteriaCoT, String criteriaGEval) {
         // Step 1: CoT 생성
-        String cot = getCoT(lectureText, audioInfo, motionInfo, criteriaCoT);
+        String cot = getCoT(lectureText, audioInfo, motionInfo, configInfo, criteriaCoT);
         System.out.println("[1단계 - CoT 전문]\n" + cot);
 
         // Step 2: GEval 생성
-        String gEval = getGEval(cot, lectureText, audioInfo, motionInfo, criteriaGEval);
+        String gEval = getGEval(cot, lectureText, audioInfo, motionInfo, configInfo, criteriaGEval);
         System.out.println("[2단계 - GEval 점수 및 설명]\n" + gEval);
 
         // Step 3: SAGEval 평가 (Meta-Evaluator)
-        String SAGEval = getSAGEval(gEval, lectureText, audioInfo, motionInfo);
+        String SAGEval = getSAGEval(gEval, lectureText, audioInfo, configInfo, motionInfo);
         System.out.println("[3단계 - Meta 평가 결과]\n" + SAGEval);
 
         return "[SST]\n" + lectureText + "\n[AudioInfo]\n" + audioInfo + "\n[MotionInfo]\n" + motionInfo + "\n[1단계 - CoT 전문]\n" + cot + "\n[2단계 - GEval 점수 및 설명]\n" + gEval + "\n[3단계 - Meta 평가 결과]\n" + SAGEval;
     }
 
 
-    public String fillCoTPromptPlaceholders(String lectureText, String audioInfo, String motionInfo, String criteria) {
+    public String fillCoTPromptPlaceholders(String lectureText, String audioInfo, String motionInfo, String configInfo, String criteria) {
         PromptTemplate template = promptTemplateService.getByType("CoT");
 
         return template.getContent()
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
                 .replace("{motion}", motionInfo)
+                .replace("{config}", configInfo)
                 .replace("{criteria}", criteria);
     }
 
-    public String getCoT(String lectureText, String audioInfo, String motionInfo, String criteria) {
-        String finalPrompt = fillCoTPromptPlaceholders(lectureText, audioInfo, motionInfo, criteria);
+    public String getCoT(String lectureText, String audioInfo, String motionInfo, String configInfo, String criteria) {
+        String finalPrompt = fillCoTPromptPlaceholders(lectureText, audioInfo, motionInfo, configInfo, criteria);
+        System.out.println(finalPrompt);
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
                 "content", finalPrompt
@@ -208,18 +210,20 @@ public class GptService {
         return messageResp.get("content").toString().trim();
     }
 
-    public String fillGEvalPromptPlaceholders(String cot, String lectureText, String audioInfo, String motionInfo, String criteria) {
+    public String fillGEvalPromptPlaceholders(String cot, String lectureText, String audioInfo, String motionInfo, String configInfo, String criteria) {
         PromptTemplate template = promptTemplateService.getByType("GEval");
         return template.getContent()
                 .replace("{CoT}", cot)
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
                 .replace("{motion}", motionInfo)
+                .replace("{config}",configInfo)
                 .replace("{criteria}", criteria);
     }
 
-    public String getGEval(String cot, String lectureText, String audioInfo, String motionInfo, String criteria) {
-        String finalPrompt = fillGEvalPromptPlaceholders(cot, lectureText, audioInfo, motionInfo, criteria);
+    public String getGEval(String cot, String lectureText, String audioInfo, String motionInfo, String configInfo, String criteria) {
+        String finalPrompt = fillGEvalPromptPlaceholders(cot, lectureText, audioInfo, motionInfo, configInfo, criteria);
+        System.out.println(finalPrompt);
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
                 "content", finalPrompt
@@ -247,17 +251,19 @@ public class GptService {
         return messageResp.get("content").toString().trim();
     }
 
-    public String fillSAGEvalPromptPlaceholders(String gEval, String lectureText, String audioInfo, String motionInfo) {
+    public String fillSAGEvalPromptPlaceholders(String gEval, String lectureText, String audioInfo, String configInfo, String motionInfo) {
         PromptTemplate template = promptTemplateService.getByType("SAGEval");
         return template.getContent()
                 .replace("{gEval}", gEval)
                 .replace("{text}", lectureText)
                 .replace("{audio}", audioInfo)
-                .replace("{motion}", motionInfo);
+                .replace("{motion}", motionInfo)
+                .replace("{config}", configInfo);
     }
 
-    public String getSAGEval(String gEval, String lectureText, String audioInfo, String motionInfo) {
-        String finalPrompt = fillSAGEvalPromptPlaceholders(gEval, lectureText, audioInfo, motionInfo);
+    public String getSAGEval(String gEval, String lectureText, String audioInfo, String configInfo, String motionInfo) {
+        String finalPrompt = fillSAGEvalPromptPlaceholders(gEval, lectureText, audioInfo, configInfo, motionInfo);
+        System.out.println(finalPrompt);
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
                 "content", finalPrompt

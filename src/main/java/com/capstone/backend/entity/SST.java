@@ -1,8 +1,6 @@
 package com.capstone.backend.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -12,9 +10,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SST {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // ✅ ID 자동 생성
     private Long id;
 
-    @Column
+    @Lob  // 긴 문자열 저장 가능
+    @Column(columnDefinition = "TEXT")
     private String content;
 }

@@ -1,9 +1,5 @@
 package com.capstone.backend.controller;
-import com.capstone.backend.dto.ConfigRequestDTO;
-import com.capstone.backend.dto.LectureEvaluationMP3RequestDTO;
-import com.capstone.backend.dto.LectureEvaluationRequestDTO;
-import com.capstone.backend.dto.LectureFeedbackResultDTO;
-import com.capstone.backend.dto.LectureUploadAudioRespondDTO;
+import com.capstone.backend.dto.*;
 import com.capstone.backend.entity.Criteria;
 import com.capstone.backend.service.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +29,9 @@ public class LectureFeedbackController {
     private final CriteriaService criteriaService;
     private final AudioService audioService;
     private final MotionService motionService;
+    private final ConfigService configService;
+    private final MotionCaptionService motionCaptionService;
+    private final SSTService sstService;
 
     @PostMapping("/feedback/text")
     public ResponseEntity<LectureFeedbackResultDTO> getFullEvaluationPipelineByText(@RequestBody LectureEvaluationRequestDTO requestDTO) {
@@ -41,6 +40,7 @@ public class LectureFeedbackController {
                     requestDTO.getLectureText(),
                     requestDTO.getAudioInfo(),
                     requestDTO.getMotionInfo(),
+                    "",
                     "",
                     ""
             );
@@ -83,6 +83,10 @@ public class LectureFeedbackController {
             //Config 파일 Dto 파싱
             ObjectMapper objectMapper = new ObjectMapper();
             ConfigRequestDTO configDto = objectMapper.readValue(config.getBytes(), ConfigRequestDTO.class);
+            String configInfo = configDto.toSummaryString();
+
+            // Config 저장
+            configService.save(configDto);
 
             // 2. MultipartFile을 File로 저장
             File mp3File = convertToTempFile(file);
@@ -94,8 +98,14 @@ public class LectureFeedbackController {
                 transcript = clovaSpeechService.sendAudioToClova(is);
             }
 
+            // SST 저장
+            sstService.save(transcript);
+
             // 4. Motion 분석
             String motionCapture = motionService.getCaptionResult(holistic.getBytes());
+
+            // MotionCaption 저장
+            motionCaptionService.save(motionCapture);
 
             // 5. 평가 기준
             String criteriaCoT = criteriaService.getByType("CoT").stream()
@@ -112,9 +122,11 @@ public class LectureFeedbackController {
                     transcript,
                     audioResult,
                     motionCapture,
+                    configInfo,
                     criteriaCoT,
                     criteriaGEval
             );
+
 
             LectureFeedbackResultDTO responseDto = new LectureFeedbackResultDTO();
             responseDto.setResult(result);

@@ -19,6 +19,7 @@ public class PromptTemplateInitializer implements CommandLineRunner {
                 데이터:
                 - 강의 텍스트(STT 변환): {text}
                 - 음성 분석 결과(속도, 억양, 강조 등): {audio}
+                - 강의 대상 및 강의 환경 정보 : {config}
                 - 제스처 및 표정 등 모션 분석 요약
                   (
                     모션 데이터 형식은 다음과 같다. [start_mm:start_ss : end_mm:end_ss] : label
@@ -91,6 +92,8 @@ public class PromptTemplateInitializer implements CommandLineRunner {
                                 
                 모의 강의 데이터
                 강의 STT 전문 (Speech-To-Text): {text}
+                
+                강의 대상 및 강의 환경 정보 : {config}
                                 
                 음성 분석 데이터 (속도, 억양, 강조 등): {audio}
                                 
@@ -160,6 +163,9 @@ public class PromptTemplateInitializer implements CommandLineRunner {
                             
                 음성 분석 요약 (속도, 억양, 강조 등):
                 {audio}
+                
+                강의 대상 및 강의 환경 정보 :
+                {config}
                             
                 Holistic 모션 요약 (형식: [mm:ss] [mm:ss]: label)
                 label_map = { 0: "서있음", 1: "손 머리에 대는 중", 2: "뒤돌기", 3: "팔짱끼기" }

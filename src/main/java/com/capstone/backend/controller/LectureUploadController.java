@@ -2,13 +2,17 @@ package com.capstone.backend.controller;
 
 import com.capstone.backend.dto.*;
 import com.capstone.backend.entity.Config;
-import com.capstone.backend.service.ClovaSpeechService;
-import com.capstone.backend.service.ConfigService;
-import com.capstone.backend.service.HolisticService;
+import com.capstone.backend.entity.Holistic;
+import com.capstone.backend.entity.MotionCaption;
+import com.capstone.backend.entity.SST;
+import com.capstone.backend.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/upload")
@@ -17,7 +21,8 @@ public class LectureUploadController {
 
     private final ClovaSpeechService clovaSpeechService;
     private final ConfigService configService;
-    private final HolisticService holisticService;
+    private final MotionCaptionService motionCaptionService;
+    private final SSTService sstService;
 
     // 🎧 오디오 업로드 및 STT 처리
     @PostMapping("/audio-clova")
@@ -48,25 +53,60 @@ public class LectureUploadController {
         return ResponseEntity.ok(new LectureUploadConfigRespondDTO("success"));
     }
 
-    // 🧍‍♂️ 포즈 랜드마크 업로드
-    @PostMapping("/holistic")
-    public ResponseEntity<String> uploadHolisticData(@RequestBody HolisticDataDTO request) {
-        System.out.println("📥 Holistic Data Received:");
-        System.out.println("Video ID: " + request.getVideoId());
-        System.out.println("Pose Count: " +
-                (request.getHolisticData() != null ? request.getHolisticData().size() : 0));
-
-        // 중복 체크
-        if (holisticService.existsByVideoId(request.getVideoId())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("❌ 이미 저장된 videoId입니다: " + request.getVideoId());
-        }
-
-        // 저장
-        holisticService.save(request);
-
-        return ResponseEntity.ok("✅ Holistic data 저장 완료: " + request.getVideoId());
+    // ⚙️ 설정 조회 (최신)
+    @GetMapping("/config")
+    public ResponseEntity<ConfigRequestDTO> getLatestConfig() {
+        return configService.findLatestAsDTO()
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // ⚙️ 설정 전체 리스트 조회
+    @GetMapping("/config/all")
+    public ResponseEntity<List<ConfigRequestDTO>> getAllConfigs() {
+        return ResponseEntity.ok(configService.findAllAsDTO());
+    }
+
+
+    // 🧠 SST 저장
+    @PostMapping("/sst")
+    public ResponseEntity<String> uploadSST(@RequestBody String content) {
+        sstService.save(content);
+        return ResponseEntity.ok("✅ SST 저장 완료");
+    }
+
+    // 🧠 SST 조회
+    @GetMapping("/sst")
+    public ResponseEntity<SST> getLatestSST() {
+        return sstService.getLatestSST()
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // 🧠 SST 전체 리스트 조회
+    @GetMapping("/sst/all")
+    public ResponseEntity<List<SST>> getAllSST() {
+        return ResponseEntity.ok(sstService.findAll());
+    }
+
+    // 🎬 MotionCaption 저장
+    @PostMapping("/motion")
+    public ResponseEntity<String> uploadMotionCaption(@RequestBody String content) {
+        motionCaptionService.save(content);
+        return ResponseEntity.ok("✅ MotionCaption 저장 완료");
+    }
+
+    // 🎬 MotionCaption 조회
+    @GetMapping("/motion")
+    public ResponseEntity<MotionCaption> getLatestMotionCaption() {
+        return motionCaptionService.findLatest()
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // 🎬 MotionCaption 전체 리스트 조회
+    @GetMapping("/motion/all")
+    public ResponseEntity<List<MotionCaption>> getAllMotionCaptions() {
+        return ResponseEntity.ok(motionCaptionService.findAll());
+    }
 }
