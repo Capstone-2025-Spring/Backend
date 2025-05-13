@@ -18,10 +18,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/vocab-check', methods=['POST'])
 def vocab_check():
-    data = request.get_json()
-    text = data.get('text', '')
-    result = check_vocab(text)
-    return jsonify(result)
+    try:
+        data = request.get_json(force=True)
+
+        if not data or 'text' not in data:
+            return jsonify({"error": "No text provided"}), 400
+
+        text = data['text'].strip()
+        if not text:
+            return jsonify({"error": "Empty text received"}), 400
+
+        result = check_vocab(text)
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": f"Internal error: {str(e)}"}), 500
+
 
 @app.route('/analyze-audio', methods=['POST'])
 def analyze_audio_route():

@@ -25,7 +25,7 @@ public class LectureFeedbackController {
 
     private final ClovaSpeechService clovaSpeechService;
     private final GptService gptService;
-    private final PromptTemplateService promptTemplateService;
+    private final VocabService vocabService;
     private final CriteriaService criteriaService;
     private final AudioService audioService;
     private final MotionService motionService;
@@ -82,6 +82,19 @@ public class LectureFeedbackController {
             long sttEnd = System.currentTimeMillis();
             System.out.println("🟨 STT 처리 소요 시간: " + (sttEnd - sttStart) + "ms");
 
+            // 4.5 어휘 분석 (상세 정보용)
+            long vocabStart = System.currentTimeMillis();
+            Map<String, Object> vocabAnalysis = vocabService.analyzeVocabularyDetail(transcript);
+            long vocabEnd = System.currentTimeMillis();
+            System.out.println("📘 어휘 분석 소요 시간: " + (vocabEnd - vocabStart) + "ms");
+
+            // Optional: 로그 출력용 요약
+            String difficulty = String.valueOf(vocabAnalysis.getOrDefault("difficulty_level", "분석불가"));
+            List<String> blockedWords = (List<String>) vocabAnalysis.getOrDefault("blocked_words", List.of());
+            System.out.println("📘 어휘 난이도: " + difficulty);
+            System.out.println("📘 금지 어휘: " + blockedWords);
+
+
             // 5. 모션 처리
             long motionStart = System.currentTimeMillis();
             String motionCapture = motionService.getCaptionResult(holistic.getBytes());
@@ -113,6 +126,10 @@ public class LectureFeedbackController {
                     criteriaCoT,
                     criteriaGEval
             );
+
+            resultDto.setVocabDifficulty(difficulty);
+            resultDto.setBlockedWords(blockedWords);
+
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 파이프라인 소요 시간: " + (gptEnd - gptStart) + "ms");
 

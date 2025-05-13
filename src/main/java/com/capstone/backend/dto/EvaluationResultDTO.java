@@ -9,4 +9,8 @@ public class EvaluationResultDTO {
     private double overallScore;
     private String overallReason;
     private List<EvaluationItemDTO> criteriaScores;
+
+    // 🔽 추가된 필드들
+    private String vocabDifficulty;         // 예: "보통", "어려움"
+    private List<String> blockedWords;      // 금지된 어휘 목록
 }
