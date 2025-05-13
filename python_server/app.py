@@ -10,6 +10,7 @@ from flask import Flask, jsonify, request, send_file
 #from vocab_checker import check_vocab
 from audio_analysis import analyze_audio
 from video_caption_generator.run_captioning import run_captioning_from_json
+from vocab_checker import check_vocab
 
 app = Flask(__name__)
 UPLOAD_FOLDER = './uploads'
@@ -19,9 +20,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def vocab_check():
     data = request.get_json()
     text = data.get('text', '')
-    return jsonify({"message": "vocab check 임시 비활성화 중. JVM 깔기 시러서"})
-    #result = check_vocab(text)
-    #return jsonify(result)
+    result = check_vocab(text)
+    return jsonify(result)
 
 @app.route('/analyze-audio', methods=['POST'])
 def analyze_audio_route():

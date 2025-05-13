@@ -33,31 +33,6 @@ public class LectureFeedbackController {
     private final MotionCaptionService motionCaptionService;
     private final SSTService sstService;
 
-    @PostMapping("/feedback/text")
-    public ResponseEntity<LectureFeedbackResultDTO> getFullEvaluationPipelineByText(@RequestBody LectureEvaluationRequestDTO requestDTO) {
-        try {
-            String result = gptService.runFullEvaluationPipeline(
-                    requestDTO.getLectureText(),
-                    requestDTO.getAudioInfo(),
-                    requestDTO.getMotionInfo(),
-                    "",
-                    "",
-                    ""
-            );
-
-            LectureFeedbackResultDTO responseDto = new LectureFeedbackResultDTO();
-            responseDto.setResult(result);
-
-            return ResponseEntity.ok(responseDto);
-
-        } catch (Exception e) {
-            LectureFeedbackResultDTO errorDto = new LectureFeedbackResultDTO();
-            errorDto.setResult("에러 발생: " + e.getMessage());
-
-            return ResponseEntity.internalServerError().body(errorDto);
-        }
-    }
-
     private File convertToTempFile(MultipartFile multipartFile) throws IOException {
         String originalFilename = multipartFile.getOriginalFilename();
         File tempFile = File.createTempFile("upload_", "_" + (originalFilename != null ? originalFilename : "temp.mp3"));
@@ -67,58 +42,70 @@ public class LectureFeedbackController {
     }
 
     @PostMapping(value = "/feedback/mp3", consumes = "multipart/form-data")
-    public ResponseEntity<LectureFeedbackResultDTO> getFullEvaluationPipelineByMP3(
+    public ResponseEntity<?> getFullEvaluationPipelineByMP3(
             @RequestParam("file") MultipartFile file,
             @RequestParam("holistic") MultipartFile holistic,
-            @RequestParam("config") MultipartFile config //config 파일도 수신
+            @RequestParam("config") MultipartFile config
     ) {
         try {
+            long totalStart = System.currentTimeMillis();
+
             // 1. 파일 유효성 검사
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
-                LectureFeedbackResultDTO errorDto = new LectureFeedbackResultDTO();
-                errorDto.setResult("MP3 파일만 업로드 가능합니다.");
-                return ResponseEntity.badRequest().body(errorDto);
+                return ResponseEntity.badRequest().body("MP3 파일만 업로드 가능합니다.");
             }
-            //Config 파일 Dto 파싱
+
+            // 2. Config 파싱
+            long configStart = System.currentTimeMillis();
             ObjectMapper objectMapper = new ObjectMapper();
             ConfigRequestDTO configDto = objectMapper.readValue(config.getBytes(), ConfigRequestDTO.class);
             String configInfo = configDto.toSummaryString();
-
-            // Config 저장
             configService.save(configDto);
+            long configEnd = System.currentTimeMillis();
+            System.out.println("🟦 Config 파싱 소요 시간: " + (configEnd - configStart) + "ms");
 
-            // 2. MultipartFile을 File로 저장
+            // 3. MP3 분석
+            long audioStart = System.currentTimeMillis();
             File mp3File = convertToTempFile(file);
             String audioResult = audioService.analyzeAudio(mp3File);
+            long audioEnd = System.currentTimeMillis();
+            System.out.println("🟧 MP3 분석 소요 시간: " + (audioEnd - audioStart) + "ms");
 
-            // 3. Clova STT (InputStream은 미리 복사해서 사용)
+            // 4. STT 처리
+            long sttStart = System.currentTimeMillis();
             String transcript;
             try (InputStream is = new FileInputStream(mp3File)) {
                 transcript = clovaSpeechService.sendAudioToClova(is);
             }
-
-            // SST 저장
             sstService.save(transcript);
+            long sttEnd = System.currentTimeMillis();
+            System.out.println("🟨 STT 처리 소요 시간: " + (sttEnd - sttStart) + "ms");
 
-            // 4. Motion 분석
+            // 5. 모션 처리
+            long motionStart = System.currentTimeMillis();
             String motionCapture = motionService.getCaptionResult(holistic.getBytes());
-
-            // MotionCaption 저장
             motionCaptionService.save(motionCapture);
+            long motionEnd = System.currentTimeMillis();
+            System.out.println("🟩 모션 처리 소요 시간: " + (motionEnd - motionStart) + "ms");
 
-            // 5. 평가 기준
+            // 6. 평가 기준 불러오기
+            long criteriaStart = System.currentTimeMillis();
             String criteriaCoT = criteriaService.getByType("CoT").stream()
-                    .map(Criteria::getContent).filter(c -> c != null && !c.isBlank()).collect(Collectors.joining("\n"));
+                    .map(Criteria::getContent)
+                    .filter(c -> c != null && !c.isBlank())
+                    .collect(Collectors.joining("\n"));
 
             String criteriaGEval = criteriaService.getByType("GEval").stream()
-                    .map(Criteria::getContent).filter(c -> c != null && !c.isBlank()).collect(Collectors.joining("\n"));
+                    .map(Criteria::getContent)
+                    .filter(c -> c != null && !c.isBlank())
+                    .collect(Collectors.joining("\n"));
+            long criteriaEnd = System.currentTimeMillis();
+            System.out.println("🟪 평가 기준 로딩 소요 시간: " + (criteriaEnd - criteriaStart) + "ms");
 
-            System.out.println(audioResult);
-            System.out.println(motionCapture);
-
-            // 6. GPT 평가 파이프라인 실행
-            String result = gptService.runFullEvaluationPipeline(
+            // 7. GPT 평가 실행
+            long gptStart = System.currentTimeMillis();
+            EvaluationResultDTO resultDto = gptService.runFullEvaluationPipeline(
                     transcript,
                     audioResult,
                     motionCapture,
@@ -126,19 +113,21 @@ public class LectureFeedbackController {
                     criteriaCoT,
                     criteriaGEval
             );
+            long gptEnd = System.currentTimeMillis();
+            System.out.println("🟥 GPT 평가 파이프라인 소요 시간: " + (gptEnd - gptStart) + "ms");
 
+            long totalEnd = System.currentTimeMillis();
+            System.out.println("✅ 전체 처리 소요 시간: " + (totalEnd - totalStart) + "ms");
 
-            LectureFeedbackResultDTO responseDto = new LectureFeedbackResultDTO();
-            responseDto.setResult(result);
-            return ResponseEntity.ok(responseDto);
+            return ResponseEntity.ok(resultDto);
 
         } catch (Exception e) {
             e.printStackTrace();
-            LectureFeedbackResultDTO errorDto = new LectureFeedbackResultDTO();
-            errorDto.setResult("에러 발생: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(errorDto);
+            return ResponseEntity.internalServerError().body("에러 발생: " + e.getMessage());
         }
     }
+
+
 
 
 }

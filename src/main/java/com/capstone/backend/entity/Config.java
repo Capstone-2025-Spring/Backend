@@ -3,6 +3,8 @@ package com.capstone.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -16,17 +18,19 @@ public class Config {
     private Long id;
 
     private String title;
-    private String category;
 
-    private String schoolLevel;
+    // 강의 대상 그룹 (예: 초등 고학년, 중학생 등)
+    private String audienceGroup;
+
+    // 강의 대상 유형 (예: 중간 수준, 고학력자 등)
+    private String audienceType;
+
     private String subject;
-    private String ageGroup;
-    private String classSize;
-    private String studentType;
 
-    private int difficulty;
+    // 사용자 지정 평가 기준 목록을 comma-separated string으로 저장
+    @ElementCollection
+    private List<String> userCriteria;
+
     private boolean audioEnabled;
     private boolean videoEnabled;
-
-    private String pdfFile;
 }

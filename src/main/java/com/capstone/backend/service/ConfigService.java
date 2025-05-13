@@ -38,20 +38,17 @@ public class ConfigService {
         // 새 Config 저장
         Config config = Config.builder()
                 .title(dto.getTitle())
-                .category(dto.getCategory())
-                .schoolLevel(dto.getSchool_level())
+                .audienceGroup(dto.getAudience_group())
+                .audienceType(dto.getAudience_type())
                 .subject(dto.getSubject())
-                .ageGroup(dto.getAge_group())
-                .classSize(dto.getClass_size())
-                .studentType(dto.getStudent_type())
-                .difficulty(dto.getDifficulty())
+                .userCriteria(dto.getUser_criteria())
                 .audioEnabled(dto.isAudio_enabled())
                 .videoEnabled(dto.isVideo_enabled())
-                .pdfFile(dto.getPdf_file())
                 .build();
 
         return configRepository.save(config);
     }
+
 
     /**
      * 가장 최근 Config 1개 반환
@@ -92,17 +89,13 @@ public class ConfigService {
     private ConfigRequestDTO toDTO(Config config) {
         return new ConfigRequestDTO(
                 config.getTitle(),
-                config.getCategory(),
-                config.getSchoolLevel(),
+                config.getAudienceGroup(),
+                config.getAudienceType(),
                 config.getSubject(),
-                config.getAgeGroup(),
-                config.getClassSize(),
-                config.getStudentType(),
-                List.of(), // user_criteria는 현재 별도 저장
-                config.getDifficulty(),
+                config.getUserCriteria(), // 실제 리스트로 저장된 경우 그대로 사용
                 config.isAudioEnabled(),
-                config.isVideoEnabled(),
-                config.getPdfFile()
+                config.isVideoEnabled()
         );
     }
+
 }
