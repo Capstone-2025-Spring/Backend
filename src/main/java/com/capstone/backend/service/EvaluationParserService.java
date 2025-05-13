@@ -30,9 +30,9 @@ public class EvaluationParserService {
             result.setOverallReason(overallReasonMatcher.group(2).trim());
         }
 
-        // 각 평가 항목 추출
+        // 평가 항목 추출 (🔹 라인도 종료 조건에 추가)
         Pattern itemPattern = Pattern.compile(
-                "#####\\s*(.*?)\\s*:\\s*(\\d+)\\s*@@@@@ 해당 점수를 부여한 이유 ?:\\s*([\\s\\S]*?)(?=#####|Overall Teaching Ability Score|###|$)"
+                "#####\\s*(.*?)\\s*:\\s*(\\d+)\\s*@@@@@ 해당 점수를 부여한 이유 ?:\\s*([\\s\\S]*?)(?=#####|Overall Teaching Ability Score|###|🔹|$)"
         );
 
         Matcher itemMatcher = itemPattern.matcher(rawText);
