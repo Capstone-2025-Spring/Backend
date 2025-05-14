@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
@@ -25,6 +27,7 @@ public class LectureFeedbackController {
 
     private final ClovaSpeechService clovaSpeechService;
     private final GptService gptService;
+    private final GPTEventService gptEventService;
     private final VocabService vocabService;
     private final CriteriaService criteriaService;
     private final AudioService audioService;
@@ -34,10 +37,12 @@ public class LectureFeedbackController {
     private final SSTService sstService;
 
     private File convertToTempFile(MultipartFile multipartFile) throws IOException {
-        String originalFilename = multipartFile.getOriginalFilename();
-        File tempFile = File.createTempFile("upload_", "_" + (originalFilename != null ? originalFilename : "temp.mp3"));
+        String ext = multipartFile.getOriginalFilename() != null && multipartFile.getOriginalFilename().contains(".")
+                ? multipartFile.getOriginalFilename().substring(multipartFile.getOriginalFilename().lastIndexOf("."))
+                : ".tmp";
+        File tempFile = File.createTempFile("upload_", "_" + UUID.randomUUID() + ext);
         multipartFile.transferTo(tempFile);
-        tempFile.deleteOnExit(); // JVM 종료 시 자동 삭제
+        tempFile.deleteOnExit();
         return tempFile;
     }
 
@@ -160,37 +165,50 @@ public class LectureFeedbackController {
             }
 
             // 2. Config 파싱
+            long configStart = System.currentTimeMillis();
             ObjectMapper objectMapper = new ObjectMapper();
             ConfigRequestDTO configDto = objectMapper.readValue(config.getBytes(), ConfigRequestDTO.class);
             String configInfo = configDto.toSummaryString();
             configService.save(configDto);
+            long configEnd = System.currentTimeMillis();
+            System.out.println("🟦 Config 파싱 소요 시간: " + (configEnd - configStart) + "ms");
 
             // 3. MP3 분석
+            long audioStart = System.currentTimeMillis();
             File mp3File = convertToTempFile(file);
             String audioResult = audioService.analyzeAudio(mp3File);
+            long audioEnd = System.currentTimeMillis();
+            System.out.println("🟧 MP3 분석 소요 시간: " + (audioEnd - audioStart) + "ms");
 
-            // 4. SST (Timestamp 포함 버전)
+            // 4. SST
+            long sstStart = System.currentTimeMillis();
             SSTResponseDTO sst = clovaSpeechService.sendAudioToClovaWithTimestamps(mp3File);
             SSTRangeSplitDTO split = clovaSpeechService.splitByTimeRange(sst, 120_000, 150_000);
-
             Map<String, String> textMap = clovaSpeechService.splitTextByRange(split);
-            String textInRange = textMap.get("rangeText"); // 이벤트 범위 내 텍스트
-            String textOutOfRange = textMap.get("otherText"); // 이벤트 범위 밖 텍스트
-
-            System.out.println("구간 내 텍스트:\n\n\n\n" + textInRange +"\n\n\n\n");
+            String textInRange = textMap.get("rangeText");
+            String textOutOfRange = textMap.get("otherText");
+            long sstEnd = System.currentTimeMillis();
+            System.out.println("🟨 SST 처리 소요 시간: " + (sstEnd - sstStart) + "ms");
 
             // 4.5 어휘 분석
+            long vocabStart = System.currentTimeMillis();
             Map<String, Object> vocabAnalysis = vocabService.analyzeVocabularyDetail(sst.getFullText());
             String difficulty = String.valueOf(vocabAnalysis.getOrDefault("difficulty_level", "분석불가"));
             List<String> blockedWords = (List<String>) vocabAnalysis.getOrDefault("blocked_words", List.of());
+            long vocabEnd = System.currentTimeMillis();
+            System.out.println("📘 어휘 분석 소요 시간: " + (vocabEnd - vocabStart) + "ms");
 
-            // 5. 모션 캡션 (timestamp 버전)
+            // 5. 모션 캡션
+            long motionStart = System.currentTimeMillis();
             String motionJsonResponse = motionService.getCaptionResult(holistic.getBytes());
             MotionRangeSplitDTO motionSplit = motionService.splitMotionCaptionByRange(motionJsonResponse, 120, 150);
             String rangeMotionCaption = motionService.formatRangeCaptionsCompressed(motionSplit.getRangeCaptions());
             motionCaptionService.save(motionJsonResponse);
+            long motionEnd = System.currentTimeMillis();
+            System.out.println("🟩 모션 캡션 처리 소요 시간: " + (motionEnd - motionStart) + "ms");
 
-            // 6. 평가 기준
+            // 6. 평가 기준 로딩
+            long criteriaStart = System.currentTimeMillis();
             String criteriaCoT = criteriaService.getByType("CoT").stream()
                     .map(Criteria::getContent)
                     .filter(c -> c != null && !c.isBlank())
@@ -199,18 +217,41 @@ public class LectureFeedbackController {
                     .map(Criteria::getContent)
                     .filter(c -> c != null && !c.isBlank())
                     .collect(Collectors.joining("\n"));
+            long criteriaEnd = System.currentTimeMillis();
+            System.out.println("🟪 평가 기준 로딩 소요 시간: " + (criteriaEnd - criteriaStart) + "ms");
 
-            // 7. GPT 평가 실행
-            EvaluationResultDTO resultDto = gptService.runFullEvaluationPipeline(
-                    sst.getFullText(),
-                    audioResult,
-                    motionJsonResponse,
-                    configInfo,
-                    criteriaCoT,
-                    criteriaGEval
-            );
-            resultDto.setVocabDifficulty(difficulty);
-            resultDto.setBlockedWords(blockedWords);
+            // 7. GPT 병렬 평가 실행
+            long gptStart = System.currentTimeMillis();
+            CompletableFuture<EvaluationResultDTO> generalEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                EvaluationResultDTO dto = gptService.runFullEvaluationPipeline(
+                        textOutOfRange,
+                        audioResult,
+                        motionJsonResponse,
+                        configInfo,
+                        criteriaCoT,
+                        criteriaGEval
+                );
+                dto.setVocabDifficulty(difficulty);
+                dto.setBlockedWords(blockedWords);
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟥 일반 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                return dto;
+            });
+
+            CompletableFuture<String> eventEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                String result = gptEventService.getEventEvaluation(textInRange, rangeMotionCaption, configInfo);
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟩 이벤트 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                return result;
+            });
+
+            EvaluationResultDTO resultDto = generalEvalFuture.get();
+            String eventEval = eventEvalFuture.get();
+
+            long gptEnd = System.currentTimeMillis();
+            System.out.println("🟥 GPT 평가 병렬 실행 소요 시간: " + (gptEnd - gptStart) + "ms");
 
             long totalEnd = System.currentTimeMillis();
             System.out.println("✅ 전체 처리 소요 시간: " + (totalEnd - totalStart) + "ms");
