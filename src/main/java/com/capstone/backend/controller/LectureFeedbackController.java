@@ -199,6 +199,7 @@ public class LectureFeedbackController {
             String difficulty = String.valueOf(vocabAnalysis.getOrDefault("difficulty_level", "분석불가"));
             List<String> blockedWords = (List<String>) vocabAnalysis.getOrDefault("blocked_words", List.of());
             long vocabEnd = System.currentTimeMillis();
+            System.out.println(blockedWords);
             System.out.println("📘 어휘 분석 소요 시간: " + (vocabEnd - vocabStart) + "ms");
 
             // 5. 모션 캡션
@@ -260,6 +261,8 @@ public class LectureFeedbackController {
 
             long totalEnd = System.currentTimeMillis();
             System.out.println("✅ 전체 처리 소요 시간: " + (totalEnd - totalStart) + "ms");
+
+            System.out.println(resultDto);
 
             return ResponseEntity.ok(resultDto);
 
