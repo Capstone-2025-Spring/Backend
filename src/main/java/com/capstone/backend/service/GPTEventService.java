@@ -1,6 +1,7 @@
 package com.capstone.backend.service;
 
 import com.capstone.backend.config.OpenAiProperties;
+import com.capstone.backend.dto.EvaluationResultDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -15,6 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GPTEventService {
     private final OpenAiProperties openAiProperties;
+    private final EvaluationParserService evaluationParserService;
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
 
     private final String promptTemplate = """
@@ -26,7 +28,7 @@ public class GPTEventService {
 
         ---
 
-        📌 [상황 설명] : 강의 중 사람들이 소란을 피우기 시작했다.
+        📌 [상황 설명] : {event}
 
         📌 [강의 정보] : {config}
 
@@ -52,20 +54,22 @@ public class GPTEventService {
         ---
 
         ✍️ 평가 결과:
-        (여기에 GPT가 판단하고, 이유와 함께 피드백을 적게 함. 피드백은 반드시 두 줄 이상으로 구성해야 함)
+        (여기에 GPT가 판단하고, 이유와 함께 피드백을 적게 함. 1-10까지의 점수를 평가해야 함. 피드백은 반드시 두 줄 이상으로 구성해야 함)
         결과 형식은 반드시 다음과 같은 형식으로 제공되어야 함.
-        ***** 평가 결과 : [평가 결과]
+        ***** 점수 : [점수]
+        @@@@@ 평가 이유 : [평가 이유]
         """;
 
-    public String fillEventPrompt(String lectureText, String motionInfo, String configInfo) {
+    public String fillEventPrompt(String eventInfo, String lectureText, String motionInfo, String configInfo) {
         return promptTemplate
+                .replace("{event}", eventInfo)
                 .replace("{text}", lectureText)
                 .replace("{motion}", motionInfo)
                 .replace("{config}", configInfo);
     }
 
-    public String getEventEvaluation(String lectureText, String motionInfo, String configInfo) {
-        String prompt = fillEventPrompt(lectureText, motionInfo, configInfo);
+    public EvaluationResultDTO getEventEvaluation(String eventInfo, String lectureText, String motionInfo, String configInfo) {
+        String prompt = fillEventPrompt(eventInfo, lectureText, motionInfo, configInfo);
 
         Map<String, Object> systemMessage = Map.of(
                 "role", "system",
@@ -89,6 +93,10 @@ public class GPTEventService {
         List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
         Map<String, Object> messageResp = (Map<String, Object>) choices.get(0).get("message");
 
-        return messageResp.get("content").toString().trim();
+        String gptResponse = messageResp.get("content").toString().trim();
+
+        // 🔽 이벤트 평가 전용 파서 호출
+        return evaluationParserService.parseWithEvent(gptResponse);
     }
+
 }

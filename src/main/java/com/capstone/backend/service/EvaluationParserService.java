@@ -47,4 +47,24 @@ public class EvaluationParserService {
         result.setCriteriaScores(items);
         return result;
     }
+
+    public EvaluationResultDTO parseWithEvent(String eventText) {
+        EvaluationResultDTO result = new EvaluationResultDTO();
+
+        // 이벤트 점수: ***** 점수 : 8
+        Pattern scorePattern = Pattern.compile("\\*{5}\\s*점수\\s*:\\s*(\\d+)");
+        Matcher scoreMatcher = scorePattern.matcher(eventText);
+        if (scoreMatcher.find()) {
+            result.setEventScore(scoreMatcher.group(1));
+        }
+
+        // 이벤트 이유: @@@@@ 평가 이유 : ...
+        Pattern reasonPattern = Pattern.compile("@{5}\\s*평가 이유\\s*:\\s*([\\s\\S]+)");
+        Matcher reasonMatcher = reasonPattern.matcher(eventText);
+        if (reasonMatcher.find()) {
+            result.setEventReason(reasonMatcher.group(1).trim());
+        }
+
+        return result;
+    }
 }

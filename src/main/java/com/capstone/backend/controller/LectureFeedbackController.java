@@ -134,6 +134,8 @@ public class LectureFeedbackController {
 
             resultDto.setVocabDifficulty(difficulty);
             resultDto.setBlockedWords(blockedWords);
+            resultDto.setEventScore("");
+            resultDto.setEventReason("");
 
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 파이프라인 소요 시간: " + (gptEnd - gptStart) + "ms");
@@ -153,7 +155,8 @@ public class LectureFeedbackController {
     public ResponseEntity<?> getFullEvaluationPipelineByEvent(
             @RequestParam("file") MultipartFile file,
             @RequestParam("holistic") MultipartFile holistic,
-            @RequestParam("config") MultipartFile config
+            @RequestParam("config") MultipartFile config,
+            @RequestParam("eventInfo") String eventInfo
     ) {
         try {
             long totalStart = System.currentTimeMillis();
@@ -239,16 +242,18 @@ public class LectureFeedbackController {
                 return dto;
             });
 
-            CompletableFuture<String> eventEvalFuture = CompletableFuture.supplyAsync(() -> {
+            CompletableFuture<EvaluationResultDTO> eventEvalFuture = CompletableFuture.supplyAsync(() -> {
                 long subStart = System.currentTimeMillis();
-                String result = gptEventService.getEventEvaluation(textInRange, rangeMotionCaption, configInfo);
+                EvaluationResultDTO eventResult = gptEventService.getEventEvaluation(eventInfo, textInRange, rangeMotionCaption, configInfo);
                 long subEnd = System.currentTimeMillis();
                 System.out.println("🟩 이벤트 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
-                return result;
+                return eventResult;
             });
 
             EvaluationResultDTO resultDto = generalEvalFuture.get();
-            String eventEval = eventEvalFuture.get();
+            EvaluationResultDTO eventDto = eventEvalFuture.get();
+            resultDto.setEventReason(eventDto.getEventReason());
+            resultDto.setEventScore(eventDto.getEventScore());
 
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 병렬 실행 소요 시간: " + (gptEnd - gptStart) + "ms");
