@@ -147,25 +147,15 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         **예시:**  
         “어휘의 다양성: 기존 9점 → 조정 7점. 동일 어휘 반복이 다수 존재하며 STT 요약에서도 반복 구조가 명시됨.”
         
-        🔹 **2. 평가 기준의 명료성 검토 (Criteria Clarity Audit)**  
-        1차 평가 항목 중 정의나 해석이 모호하거나 일관되지 않아 보이는 항목이 있다면, 해당 기준에 대해 보다 명확한 정의 또는 개선 방향을 제안하세요.  
-        **예시:**  
-        “'비언어적 표현의 적절성'은 모호함. '학습자 주의 분산 유발 행동 여부'로 재정의 권장.”
-        
-        🔹 **3. 보완이 필요한 평가 기준 제안 (Dimension Expansion)**  
-        강의력을 포착하기에 부족한 평가 기준이 있다면, 새로운 평가 항목을 제안하고 점수와 이유를 설명하세요.  
-        **예시 제안 항목:**  
-        - 감정 표현력 (Emotional Expression)  
-        - 청중 반응 유도력 (Interactivity)  
-        - 시각적/공간적 동선 활용도  
-        - 멀티모달 일관성 (Text-Audio-Motion Coherence)  
-        - 수업 구조의 서사성 (Narrative Coherence)
-        
-        🔹 **4. 점수 부여 이유의 보완 (2줄 이상 기술)**  
-        각 항목에 대해 잘한 점과 개선점이 모두 드러나도록 **두 문장 이상**으로 평가 이유를 명확히 작성하세요.
-        
-        🔹 **5. 최종 종합 출력 (고정 양식 사용)**  
+       
+        🔹 **2. 최종 종합 출력 (고정 양식 사용)**  
         최종적으로 다음 형식을 **반드시 지켜서** 모든 평가 항목을 종합 정리하세요.
+        
+        (
+        **예시**
+        ##### 어휘 수준 평가 : 7
+        @@@@@ 강의 대상에 맞는 쉬운 어휘를 사용했으나, 무조건 사과로 보라는 표현이 강압적일 수 있다. SST 요약에서도 이러한 표현이 반복적으로 나타나고 있다.
+        )
         
         ##### 어휘 수준 평가 : (점수 1-10)  
         @@@@@ 이유 서술, 두 줄 이상
@@ -188,12 +178,6 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         ##### Overall Teaching Ability Score : (점수 1-10)  
         @@@@@ 이유 서술, 두 줄 이상
         
-        
-        **예시**
-        
-        ##### 어휘 수준 평가 : 7
-        @@@@@ 동일한 어휘의 반복 사용이 확인되었고, 이는 초등학생의 이해를 돕기 위한 전략일 수 있다. 그러나, 어휘의 다양성 면에서는 제한적입니다.
-                       
         ※ 출력 형식을 반드시 유지하십시오.  
         ※ 각 항목은 **두 문장 이상** 서술하십시오.  
         """);
@@ -236,7 +220,7 @@ public class PromptTemplateInitializer implements CommandLineRunner {
 
     private void initPrompt(String type, String content) {
         // 🔁 Windows/Mac 줄바꿈을 Unix 스타일로 통일
-        content = content.replaceAll("\\r\\n?", "\n");
+        content = content.replaceAll("\\r\\n?", "\n").replaceAll("[\\u200B-\\u200D\\uFEFF]", "");
 
         PromptTemplate existing = repository.findByType(type).orElse(null);
         if (existing == null) {
