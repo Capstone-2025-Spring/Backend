@@ -235,8 +235,15 @@ public class PromptTemplateInitializer implements CommandLineRunner {
     }
 
     private void initPrompt(String type, String content) {
-        if (repository.findByType(type).isEmpty()) {
+        // 🔁 Windows/Mac 줄바꿈을 Unix 스타일로 통일
+        content = content.replaceAll("\\r\\n?", "\n");
+
+        PromptTemplate existing = repository.findByType(type).orElse(null);
+        if (existing == null) {
             repository.save(new PromptTemplate(null, type, content));
+        } else if (!existing.getContent().equals(content)) {
+            existing.setContent(content);
+            repository.save(existing);
         }
     }
 }
