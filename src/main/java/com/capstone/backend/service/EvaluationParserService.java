@@ -16,29 +16,33 @@ public class EvaluationParserService {
         EvaluationResultDTO result = new EvaluationResultDTO();
         List<EvaluationItemDTO> items = new ArrayList<>();
 
-        // ✅ 항목 패턴: 점수와 이유가 각각 한 줄씩
+        // ✅ 정규식: 항목명과 점수 (한 줄), 이어지는 이유 한 줄
         Pattern pattern = Pattern.compile(
-                "\\s*#{1,}\\s*(.+?)\\s*:\\s*(\\d+)\\s*\\n+\\s*#{1,}\\s*(.+?)\\s*(?=\\n+\\s*#{1,}|\\z)",
+                "\\s*#{1,}\\s*([^:\\n]+?)\\s*:\\s*(\\d+(?:\\.\\d+)?)\\s*\\n+\\s*#{1,}\\s*(.+?)(?=\\n+\\s*#{1,}[^:\\n]+?\\s*:\\s*\\d+|\\z)",
                 Pattern.DOTALL
         );
         Matcher matcher = pattern.matcher(rawText);
 
         while (matcher.find()) {
             String name = matcher.group(1).trim();   // 예: 어휘 수준 평가
-            int score = Integer.parseInt(matcher.group(2).trim());
-            String reason = matcher.group(3).trim(); // 한 줄 이유
+            String scoreStr = matcher.group(2).trim();
+            String reason = matcher.group(3).trim();
+
+            // 소수점이 있을 수 있으므로 double 처리
+            double score = Double.parseDouble(scoreStr);
 
             if (name.equalsIgnoreCase("Overall Teaching Ability Score")) {
                 result.setOverallScore(score);
                 result.setOverallReason(reason);
             } else {
-                items.add(new EvaluationItemDTO(name, score, reason));
+                items.add(new EvaluationItemDTO(name, (int) score, reason));
             }
         }
 
         result.setCriteriaScores(items);
         return result;
     }
+
 
 
 
