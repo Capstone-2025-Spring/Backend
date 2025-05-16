@@ -16,40 +16,30 @@ public class EvaluationParserService {
         EvaluationResultDTO result = new EvaluationResultDTO();
         List<EvaluationItemDTO> items = new ArrayList<>();
 
-        // ✅ Overall Score ( # 1개 이상 허용 )
-        Pattern overallScorePattern = Pattern.compile("#{1,}\\s*Overall Teaching Ability Score\\s*:\\s*(\\d+)");
-        Matcher overallScoreMatcher = overallScorePattern.matcher(rawText);
-        if (overallScoreMatcher.find()) {
-            result.setOverallScore(Double.parseDouble(overallScoreMatcher.group(1)));
-        }
-
-        // ✅ Overall Reason ( #/@ 1개 이상 허용 )
-        Pattern overallReasonPattern = Pattern.compile(
-                "#{1,}\\s*Overall Teaching Ability Score\\s*:\\s*\\d+\\s*\\n@{1,}\\s+([\\s\\S]*?)$",
-                Pattern.MULTILINE
+        // ✅ 항목 패턴: 점수와 이유가 각각 한 줄씩
+        Pattern pattern = Pattern.compile(
+                "\\s*#{1,}\\s*(.+?)\\s*:\\s*(\\d+)\\s*\\n+\\s*#{1,}\\s*(.+?)\\s*(?=\\n+\\s*#{1,}|\\z)",
+                Pattern.DOTALL
         );
-        Matcher overallReasonMatcher = overallReasonPattern.matcher(rawText);
-        if (overallReasonMatcher.find()) {
-            result.setOverallReason(overallReasonMatcher.group(1).trim());
-        }
+        Matcher matcher = pattern.matcher(rawText);
 
-        // ✅ 항목별 점수 + 이유 ( #/@ 1개 이상, 대괄호 유무 허용 )
-        Pattern itemPattern = Pattern.compile(
-                "#{1,}\\s*(?:\\[(.+?)\\]|(.+?))\\s*:\\s*(\\d+)\\s*\\n@{1,}\\s+([\\s\\S]*?)(?=#{1,}\\s*(?:\\[.+?\\]|Overall Teaching Ability Score|.+?)\\s*:\\s*\\d+|\\z)",
-                Pattern.MULTILINE
-        );
-        Matcher itemMatcher = itemPattern.matcher(rawText);
+        while (matcher.find()) {
+            String name = matcher.group(1).trim();   // 예: 어휘 수준 평가
+            int score = Integer.parseInt(matcher.group(2).trim());
+            String reason = matcher.group(3).trim(); // 한 줄 이유
 
-        while (itemMatcher.find()) {
-            String name = itemMatcher.group(1) != null ? itemMatcher.group(1).trim() : itemMatcher.group(2).trim();
-            int score = Integer.parseInt(itemMatcher.group(3).trim());
-            String reason = itemMatcher.group(4).trim();
-            items.add(new EvaluationItemDTO(name, score, reason));
+            if (name.equalsIgnoreCase("Overall Teaching Ability Score")) {
+                result.setOverallScore(score);
+                result.setOverallReason(reason);
+            } else {
+                items.add(new EvaluationItemDTO(name, score, reason));
+            }
         }
 
         result.setCriteriaScores(items);
         return result;
     }
+
 
 
 
