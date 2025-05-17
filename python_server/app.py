@@ -5,10 +5,9 @@ import json
 import os
 import uuid
 
-from flask import Flask, jsonify, request, send_file
-
 #from vocab_checker import check_vocab
 from audio_analysis import analyze_audio
+from flask import Flask, jsonify, request, send_file
 from video_caption_generator.run_captioning import run_captioning_from_json
 from vocab_checker import check_vocab
 
