@@ -51,15 +51,14 @@ jobs:
               build/libs/backend-0.0.1-SNAPSHOT.jar \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
 
-      # ✅ 9. Python 서버 코드 업로드 (venv 제외, 강제 동기화)
+      # ✅ 9. Python 서버 코드 업로드 (venv 제외)
       - name: Upload Python server code
         run: |
-          rsync -avz --checksum --delete --exclude 'venv' ./python_server/ \
+          rsync -av --exclude 'venv' ./python_server/ \
             -e "ssh -i ec2-key.pem -o StrictHostKeyChecking=no" \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/python_server/
-        
 
-        # ✅ 10. Python 의존성 설치 및 서비스 재시작
+      # ✅ 10. Python 의존성 설치 및 서비스 재시작
       - name: Restart Python server only (reuse venv)
         uses: appleboy/ssh-action@master
         with:
