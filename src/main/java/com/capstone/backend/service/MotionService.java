@@ -29,6 +29,7 @@ public class MotionService {
 
     public MotionRangeSplitDTO splitMotionCaptionByRange(String jsonResponse, int fromSec, int toSec) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
+        System.out.println("🔥 받은 jsonResponse = " + jsonResponse);
         JsonNode root = mapper.readTree(jsonResponse);
         String raw = root.path("motionInfo").asText();
 

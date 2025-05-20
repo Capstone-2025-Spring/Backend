@@ -127,7 +127,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             echo "📡 python.service 상태 확인"
-            sudo systemctl status python.service --no-pager
+            sudo systemctl status python.service --no-pager || true
 
       # ✅ Flask 서버 충돌 방지용 선제적 kill
       - name: Kill existing Flask process
