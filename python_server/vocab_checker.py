@@ -4,7 +4,7 @@ from collections import Counter
 
 okt = Okt()
 
-# CSV에 포함된 단어 = 초등생에게 부적절한 어휘
+# CSV에 포함된 단어 = 초등생에게 부적절한 어휘임
 vocab_df = pd.read_csv('basic_vocab_5th_grade.csv')
 blocked_vocab = set(vocab_df.iloc[:, 0].dropna().tolist())
 

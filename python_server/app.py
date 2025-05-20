@@ -28,6 +28,7 @@ def vocab_check():
             return jsonify({"error": "Empty text received"}), 400
 
         result = check_vocab(text)
+        # 수정
         return jsonify(result)
 
     except Exception as e:
