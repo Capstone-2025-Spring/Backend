@@ -1,12 +1,10 @@
 #!/bin/bash
+source /home/ec2-user/python_server/venv/bin/activate
 
-# 포트 5000을 점유 중인 프로세스가 있다면 종료
-PID=$(lsof -ti:5000)
-if [ -n "$PID" ]; then
-  echo "🔻 포트 5000 점유 프로세스 종료: $PID"
-  kill -9 $PID
+# 🔽 lsof이 설치되어 있으면 포트 5000 점유 프로세스를 종료
+if command -v lsof > /dev/null 2>&1; then
+  lsof -ti:5000 | xargs -r kill -9
 fi
 
-# 가상환경 활성화 후 Flask 실행
-source /home/ec2-user/python_server/venv/bin/activate
+# Flask 서버 실행
 python /home/ec2-user/python_server/app.py
