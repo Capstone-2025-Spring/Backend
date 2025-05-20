@@ -29,7 +29,7 @@ jobs:
       - name: Grant execute permission for Gradle
         run: chmod +x ./gradlew
 
-      # 5. Gradle 빌드 (캐시 무효화 포함)
+      # 5. Gradle 빌드
       - name: Clean and Build with Gradle
         run: ./gradlew clean build
 
@@ -43,7 +43,7 @@ jobs:
           echo "${{ secrets.EC2_KEY }}" > ec2-key.pem
           chmod 600 ec2-key.pem
 
-      # 8. EC2에 JAR 복사 (정확한 위치로)
+      # 8. EC2에 JAR 복사
       - name: Upload JAR to EC2
         run: |
           scp -i ec2-key.pem \
@@ -51,35 +51,26 @@ jobs:
               build/libs/backend-0.0.1-SNAPSHOT.jar \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
 
-      # ✅ 9. Python 서버 코드 업로드 (venv 제외)
+      # 9. Python 서버 코드 업로드 (venv 제외)
       - name: Upload Python server code
         run: |
           rsync -av --exclude 'venv' ./python_server/ \
             -e "ssh -i ec2-key.pem -o StrictHostKeyChecking=no" \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/python_server/
 
-      # 9.5 ✅ start-python.sh 실행 권한 부여
-      - name: Ensure start-python.sh is executable
+      # 10. Python 서버 systemd로 재시작 (백그라운드 실행만)
+      - name: Restart Python server via systemd
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            chmod +x /home/ec2-user/python_server/start-python.sh
-
-      # ✅ 10. Python 의존성 설치 및 서비스 재시작
-      - name: Restart Python server only (reuse venv)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "🐍 Python 서버 재시작 (venv 재사옹)"
-            cd /home/ec2-user/python_server
-            source venv/bin/activate
+            echo "🐍 Python 서버 재시작"
+            sudo systemctl daemon-reexec
             sudo systemctl restart python.service
+            sudo systemctl status python.service --no-pager
+            exit 0
 
       # 11. Spring 백엔드 서비스 재시작
       - name: Restart backend service
@@ -93,8 +84,7 @@ jobs:
             sudo systemctl daemon-reexec
             sudo systemctl restart lecture.service
 
-      # 12. JAR 타임스탬프 최종 확인
-      # 12. ✅ EC2의 JAR 타임스탬프 확인
+      # 12. JAR 최종 확인
       - name: ✅ EC2의 JAR 타임스탬프 확인
         uses: appleboy/ssh-action@master
         with:
@@ -105,7 +95,7 @@ jobs:
             echo "🗂 최신 JAR 정보:"
             ls -lh /home/ec2-user/app/build/libs/backend-0.0.1-SNAPSHOT.jar
 
-      # ✅ 13. Python 주요 파일 SHA256 확인
+      # 13. Python 주요 파일 SHA256 확인
       - name: 📄 Python 코드 SHA256 체크섬 확인
         uses: appleboy/ssh-action@master
         with:
@@ -118,7 +108,7 @@ jobs:
             echo "🔐 run_captioning.py SHA256:"
             sha256sum /home/ec2-user/python_server/video_caption_generator/run_captioning.py || echo "⚠️ run_captioning.py 없음"
 
-      # ✅ 14. Python 서비스 상태 확인
+      # 14. Flask 상태 점검
       - name: 🧪 Flask 서버 상태 점검
         uses: appleboy/ssh-action@master
         with:
@@ -127,14 +117,4 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             echo "📡 python.service 상태 확인"
-            sudo systemctl status python.service --no-pager || true
-
-      # ✅ Flask 서버 충돌 방지용 선제적 kill
-      - name: Kill existing Flask process
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            pkill -f "python.*app.py" || true
+            sudo systemctl status python.service --no-pager || echo "⚠️ python.service 상태 이상 감지"
