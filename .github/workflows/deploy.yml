@@ -58,6 +58,16 @@ jobs:
             -e "ssh -i ec2-key.pem -o StrictHostKeyChecking=no" \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/python_server/
 
+      # 9.5 ✅ start-python.sh 실행 권한 부여
+      - name: Ensure start-python.sh is executable
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            chmod +x /home/ec2-user/python_server/start-python.sh
+
       # ✅ 10. Python 의존성 설치 및 서비스 재시작
       - name: Restart Python server only (reuse venv)
         uses: appleboy/ssh-action@master
@@ -67,7 +77,6 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             echo "🐍 Python 서버 재시작 (venv 재사옹)"
-            echo "🐍 Python 서버 재시작 (venv 재사용)"
             cd /home/ec2-user/python_server
             source venv/bin/activate
             sudo systemctl restart python.service
@@ -119,3 +128,13 @@ jobs:
           script: |
             echo "📡 python.service 상태 확인"
             sudo systemctl status python.service --no-pager
+
+      # ✅ Flask 서버 충돌 방지용 선제적 kill
+      - name: Kill existing Flask process
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            pkill -f "python.*app.py" || true
