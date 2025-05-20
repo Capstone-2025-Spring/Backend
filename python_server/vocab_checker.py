@@ -5,7 +5,7 @@ from collections import Counter
 
 okt = Okt()
 
-# 항상 현재 파일 기준 경로로 CSV 파일 로드
+# 항상 현재 파일 기준 경로로 CSV 파일 로드함
 base_dir = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(base_dir, 'basic_vocab_5th_grade.csv')
 vocab_df = pd.read_csv(csv_path)
