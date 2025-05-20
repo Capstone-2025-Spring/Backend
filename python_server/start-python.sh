@@ -11,4 +11,5 @@ if command -v lsof > /dev/null 2>&1; then
 fi
 
 # 🚀 Flask 서버 실행
-python /home/ec2-user/python_server/app.py
+source /home/ec2-user/python_server/venv/bin/activate
+exec python /home/ec2-user/python_server/app.py
