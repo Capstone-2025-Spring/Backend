@@ -1,11 +1,16 @@
 from konlpy.tag import Okt
 import pandas as pd
+import os
 from collections import Counter
 
 okt = Okt()
 
+# 항상 현재 파일 기준 경로로 CSV 파일 로드
+base_dir = os.path.dirname(os.path.abspath(__file__))
+csv_path = os.path.join(base_dir, 'basic_vocab_5th_grade.csv')
+vocab_df = pd.read_csv(csv_path)
+
 # CSV에 포함된 단어 = 초등생에게 부적절한 어휘임
-vocab_df = pd.read_csv('basic_vocab_5th_grade.csv')
 blocked_vocab = set(vocab_df.iloc[:, 0].dropna().tolist())
 
 def check_vocab(text):
