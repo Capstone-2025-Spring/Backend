@@ -11,7 +11,8 @@ import java.util.Map;
 public class VocabService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String flaskBaseUrl = "http://localhost:5000";  // 실제 서버 환경에 맞게 수정 가능
+    //private final String flaskBaseUrl = "http://localhost:5000";  // 실제 서버 환경에 맞게 수정 가능
+    private final String flaskBaseUrl = "http://3.39.25.136:5000";
 
     /**
      * STT 텍스트를 Flask로 보내 어휘 분석 + 난이도 요약을 반환

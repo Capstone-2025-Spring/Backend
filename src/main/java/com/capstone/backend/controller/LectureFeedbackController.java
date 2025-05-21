@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public class LectureFeedbackController {
     private final ConfigService configService;
     private final MotionCaptionService motionCaptionService;
     private final SSTService sstService;
+    private final GPTUserCriteriaService gptUserCriteriaService;
 
     private File convertToTempFile(MultipartFile multipartFile) throws IOException {
         String ext = multipartFile.getOriginalFilename() != null && multipartFile.getOriginalFilename().contains(".")
@@ -251,10 +253,30 @@ public class LectureFeedbackController {
                 return eventResult;
             });
 
+            CompletableFuture<EvaluationResultDTO> userEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                EvaluationResultDTO eventResult = gptUserCriteriaService.getCustomEvaluation(configDto, textOutOfRange, motionJsonResponse);
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟩 유저 Criteria 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                return eventResult;
+            });
+
             EvaluationResultDTO resultDto = generalEvalFuture.get();
             EvaluationResultDTO eventDto = eventEvalFuture.get();
+            EvaluationResultDTO userCriteriaDto = userEvalFuture.get();
             resultDto.setEventReason(eventDto.getEventReason());
             resultDto.setEventScore(eventDto.getEventScore());
+
+            List<EvaluationItemDTO> mergedList = new ArrayList<>();
+
+            if (resultDto.getCriteriaScores() != null) {
+                mergedList.addAll(resultDto.getCriteriaScores());
+            }
+            if (userCriteriaDto.getCriteriaScores() != null) {
+                mergedList.addAll(userCriteriaDto.getCriteriaScores());
+            }
+
+            resultDto.setCriteriaScores(mergedList);
 
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 병렬 실행 소요 시간: " + (gptEnd - gptStart) + "ms");
@@ -273,5 +295,76 @@ public class LectureFeedbackController {
     }
 
 
+    @PostMapping(value = "/feedback/criteria", consumes = "multipart/form-data")
+    public ResponseEntity<String> getFullEvaluationPipelineByCriteria(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("holistic") MultipartFile holistic,
+            @RequestParam("config") MultipartFile config
+    ) {
+        try {
+            long totalStart = System.currentTimeMillis();
 
+            // 1. 파일 유효성 검사
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".mp3")) {
+                return ResponseEntity.badRequest().body("MP3 파일만 업로드 가능합니다.");
+            }
+
+            // 2. Config 파싱
+            long configStart = System.currentTimeMillis();
+            ObjectMapper objectMapper = new ObjectMapper();
+            ConfigRequestDTO configDto = objectMapper.readValue(config.getBytes(), ConfigRequestDTO.class);
+            String configInfo = configDto.toSummaryString();
+            configService.save(configDto);
+            long configEnd = System.currentTimeMillis();
+            System.out.println("🟦 Config 파싱 소요 시간: " + (configEnd - configStart) + "ms");
+
+            // 3. MP3 분석
+            long audioStart = System.currentTimeMillis();
+            File mp3File = convertToTempFile(file);
+            String audioResult = audioService.analyzeAudio(mp3File);
+            long audioEnd = System.currentTimeMillis();
+            System.out.println("🟧 MP3 분석 소요 시간: " + (audioEnd - audioStart) + "ms");
+
+            // 4. SST
+            long sstStart = System.currentTimeMillis();
+            SSTResponseDTO sst = clovaSpeechService.sendAudioToClovaWithTimestamps(mp3File);
+            SSTRangeSplitDTO split = clovaSpeechService.splitByTimeRange(sst, 120_000, 150_000);
+            Map<String, String> textMap = clovaSpeechService.splitTextByRange(split);
+            String textInRange = textMap.get("rangeText");
+            String textOutOfRange = textMap.get("otherText");
+            long sstEnd = System.currentTimeMillis();
+            System.out.println("🟨 SST 처리 소요 시간: " + (sstEnd - sstStart) + "ms");
+
+            // 4.5 어휘 분석
+            long vocabStart = System.currentTimeMillis();
+            Map<String, Object> vocabAnalysis = vocabService.analyzeVocabularyDetail(sst.getFullText());
+            String difficulty = String.valueOf(vocabAnalysis.getOrDefault("difficulty_level", "분석불가"));
+            List<String> blockedWords = (List<String>) vocabAnalysis.getOrDefault("blocked_words", List.of());
+            long vocabEnd = System.currentTimeMillis();
+            System.out.println(blockedWords);
+            System.out.println("📘 어휘 분석 소요 시간: " + (vocabEnd - vocabStart) + "ms");
+
+            // 5. 모션 캡션
+            long motionStart = System.currentTimeMillis();
+            String motionJsonResponse = motionService.getCaptionResult(holistic.getBytes());
+            MotionRangeSplitDTO motionSplit = motionService.splitMotionCaptionByRange(motionJsonResponse, 120, 150);
+            String rangeMotionCaption = motionService.formatRangeCaptionsCompressed(motionSplit.getRangeCaptions());
+            motionCaptionService.save(motionJsonResponse);
+            long motionEnd = System.currentTimeMillis();
+            System.out.println("🟩 모션 캡션 처리 소요 시간: " + (motionEnd - motionStart) + "ms");
+
+            EvaluationResultDTO resultDto = gptUserCriteriaService.getCustomEvaluation(
+                    configDto,
+                    textOutOfRange,
+                    motionJsonResponse
+            );
+            System.out.println(resultDto);
+            return null;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("에러 발생: " + e.getMessage());
+        }
+    }
 }

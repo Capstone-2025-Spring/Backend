@@ -44,9 +44,6 @@ public class EvaluationParserService {
     }
 
 
-
-
-
     public EvaluationResultDTO parseWithEvent(String eventText) {
         EvaluationResultDTO result = new EvaluationResultDTO();
 
@@ -66,4 +63,30 @@ public class EvaluationParserService {
 
         return result;
     }
+
+    public EvaluationResultDTO parseUserCriteria(String rawText) {
+        EvaluationResultDTO result = new EvaluationResultDTO();
+        List<EvaluationItemDTO> items = new ArrayList<>();
+
+        // ***** 친절함 : 8
+        // @@@@@ 평가 이유 : ...
+        Pattern pattern = Pattern.compile(
+                "\\*{5}\\s*(.+?)\\s*:\\s*(\\d+)\\s*\\n+@{5}\\s*평가 이유\\s*:\\s*([\\s\\S]*?)(?=\\n\\*{5}|\\z)",
+                Pattern.MULTILINE
+        );
+
+        Matcher matcher = pattern.matcher(rawText);
+
+        while (matcher.find()) {
+            String name = matcher.group(1).trim();
+            int score = Integer.parseInt(matcher.group(2).trim());
+            String reason = matcher.group(3).trim();
+
+            items.add(new EvaluationItemDTO(name, score, reason));
+        }
+
+        result.setCriteriaScores(items);
+        return result;
+    }
+
 }

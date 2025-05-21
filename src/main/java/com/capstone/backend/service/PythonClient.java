@@ -18,6 +18,7 @@ public class PythonClient {
 
     public Map<String, Object> sendTextToPython(String text) {
         String url = "http://3.39.25.136:5000/vocab-check";  // EC2 배포 시엔 IP 변경
+        //String url = "http://localhost:5000/vocab-check";
 
         // 요청 본문 구성
         Map<String, String> requestBody = new HashMap<>();
