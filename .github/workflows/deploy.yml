@@ -58,19 +58,24 @@ jobs:
             -e "ssh -i ec2-key.pem -o StrictHostKeyChecking=no" \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/python_server/
 
-      # 10. Python 서버 systemd로 재시작 (백그라운드 실행만)
-      - name: Restart Python server via systemd
+      # 10. Python 의존성 설치 및 서비스 재시작
+      - name: Install Python dependencies and restart via systemd
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            echo "🐍 Python 서버 재시작"
+            echo "🐍 Python 의존성 설치 중..."
+            cd /home/ec2-user/python_server
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            echo "🔁 Python 서비스 재시작"
             sudo systemctl daemon-reexec
             sudo systemctl restart python.service
             sudo systemctl status python.service --no-pager
-            exit 0
+        
 
       # 11. Spring 백엔드 서비스 재시작
       - name: Restart backend service
