@@ -119,25 +119,12 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         
         ### [1] 입력 데이터 (Hypothesis: 평가의 근거가 되는 강의 장면 요약)
         
-        - 텍스트 요약 (STT 기반):  
-        {text}
-        
-        - 음성 분석 요약 (속도, 억양, 강조 등):  
-        {audio}
-        
         - 강의 대상 및 강의 환경 정보:  
         {config}
         
-        - Holistic 모션 요약 (형식: [mm:ss] [mm:ss]: label)  
-        label_map = { 0: "서있음", 1: "손 머리에 대는 중", 2: "뒤돌기", 3: "팔짱끼기" }  
-        ※ 모션 해석 기준: 팔짱, 뒤돌기, 지속된 서있음, 머리에 손 대기는 비언어적 전달력 저해 요소로 간주됩니다.
-        
-        ---
-        
         ### [2] 평가자 에이전트의 평가 결과 (1차 평가)  
         {gEval}
-        
-        ---
+      
         
         ### [3] (당신이 해야 할 일) 당신의 메타 평가 과제
         
