@@ -26,7 +26,8 @@ public class PromptTemplateInitializer implements CommandLineRunner {
                 0: "서있음",
                 1: "손 머리에 대는 중",
                 2: "뒤 돌고 있음",
-                3: "팔짱끼는 중"
+                3: "팔짱끼는 중",
+                4: "고개를 숙이고 있음"
               }
             ※ '뒤돌기'가 일정 시간 이상 지속되면 전달력 저하로 간주
             ※ '팔짱 끼기'가 5초 이상 지속되면 소통 방해로 간주

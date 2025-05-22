@@ -90,6 +90,9 @@ public class GPTUserCriteriaService {
 
         String gptResponse = messageResp.get("content").toString().trim();
 
+        System.out.println("-------------[User Criteria]----------------");
+        System.out.println(gptResponse);
+
         // 🔽 GPT 결과를 파싱하여 DTO로 변환
         return evaluationParserService.parseUserCriteria(gptResponse);
     }
