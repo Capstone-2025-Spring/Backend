@@ -125,25 +125,53 @@ public class LectureFeedbackController {
 
             // 7. GPT 평가 실행
             long gptStart = System.currentTimeMillis();
-            EvaluationResultDTO resultDto = gptService.runFullEvaluationPipeline(
-                    transcript,
-                    audioResult,
-                    motionCapture,
-                    configInfo,
-                    criteriaCoT,
-                    criteriaGEval
-            );
+            CompletableFuture<EvaluationResultDTO> generalEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                EvaluationResultDTO dto = gptService.runFullEvaluationPipeline(
+                        transcript,
+                        audioResult,
+                        motionCapture,
+                        configInfo,
+                        criteriaCoT,
+                        criteriaGEval
+                );
+                dto.setVocabDifficulty(difficulty);
+                dto.setBlockedWords(blockedWords);
+                dto.setEventReason("");
+                dto.setEventScore("");
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟥 일반 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                return dto;
+            });
 
-            resultDto.setVocabDifficulty(difficulty);
-            resultDto.setBlockedWords(blockedWords);
-            resultDto.setEventScore("");
-            resultDto.setEventReason("");
+            CompletableFuture<EvaluationResultDTO> userEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                EvaluationResultDTO eventResult = gptUserCriteriaService.getCustomEvaluation(configDto, transcript, motionCapture);
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟩 유저 Criteria 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                return eventResult;
+            });
 
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 파이프라인 소요 시간: " + (gptEnd - gptStart) + "ms");
 
             long totalEnd = System.currentTimeMillis();
             System.out.println("✅ 전체 처리 소요 시간: " + (totalEnd - totalStart) + "ms");
+
+
+            EvaluationResultDTO resultDto = generalEvalFuture.get();
+            EvaluationResultDTO userCriteriaDto = userEvalFuture.get();
+
+            List<EvaluationItemDTO> mergedList = new ArrayList<>();
+
+            if (resultDto.getCriteriaScores() != null) {
+                mergedList.addAll(resultDto.getCriteriaScores());
+            }
+            if (userCriteriaDto.getCriteriaScores() != null) {
+                mergedList.addAll(userCriteriaDto.getCriteriaScores());
+            }
+
+            resultDto.setCriteriaScores(mergedList);
 
             return ResponseEntity.ok(resultDto);
 

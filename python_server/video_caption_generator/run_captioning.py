@@ -72,7 +72,7 @@ def run_captioning_from_json(json_data):
                 if last_label is not None:
                     t1 = format_relative(last_start, base_time)
                     t2 = format_relative(last_end, base_time)
-                    caption_lines.append(f"[{t1}~{t2}] {last_label}")
+                    caption_lines.append(f"[{t1}:{t2}] {last_label}")
 
                 # 새로운 구간 시작
                 last_label = label
@@ -85,6 +85,6 @@ def run_captioning_from_json(json_data):
         if last_label is not None:
             t1 = format_relative(last_start, base_time)
             t2 = format_relative(last_end, base_time)
-            caption_lines.append(f"[{t1}~{t2}] {last_label}")
+            caption_lines.append(f"[{t1}:{t2}] {last_label}")
 
     return caption_lines
