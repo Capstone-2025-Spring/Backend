@@ -158,7 +158,7 @@ public class LectureFeedbackController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("holistic") MultipartFile holistic,
             @RequestParam("config") MultipartFile config,
-            @RequestParam("eventInfo") String eventInfo
+            @RequestParam("eventInfo") MultipartFile eventInfoFile
     ) {
         try {
             long totalStart = System.currentTimeMillis();
@@ -178,6 +178,16 @@ public class LectureFeedbackController {
             long configEnd = System.currentTimeMillis();
             System.out.println("🟦 Config 파싱 소요 시간: " + (configEnd - configStart) + "ms");
 
+            // 2.5 EventInfo 파싱
+            long eventInfoStart = System.currentTimeMillis();
+            ObjectMapper twoObjectMapper = new ObjectMapper();
+            EventInfoDTO eventInfoDto = twoObjectMapper.readValue(eventInfoFile.getBytes(), EventInfoDTO.class);
+            String eventDescription = eventInfoDto.getDescription(); // 기존 eventInfo 역할
+            int eventStartMs = eventInfoDto.getStart_ms();
+            int eventEndMs = eventInfoDto.getEnd_ms();
+            long eventInfoEnd = System.currentTimeMillis();
+            System.out.println("🟦 EventInfo 파싱 소요 시간: " + (eventInfoEnd - eventInfoStart) + "ms");
+
             // 3. MP3 분석
             long audioStart = System.currentTimeMillis();
             File mp3File = convertToTempFile(file);
@@ -188,7 +198,7 @@ public class LectureFeedbackController {
             // 4. SST
             long sstStart = System.currentTimeMillis();
             SSTResponseDTO sst = clovaSpeechService.sendAudioToClovaWithTimestamps(mp3File);
-            SSTRangeSplitDTO split = clovaSpeechService.splitByTimeRange(sst, 120_000, 150_000);
+            SSTRangeSplitDTO split = clovaSpeechService.splitByTimeRange(sst, eventStartMs, eventEndMs);
             Map<String, String> textMap = clovaSpeechService.splitTextByRange(split);
             String textInRange = textMap.get("rangeText");
             String textOutOfRange = textMap.get("otherText");
@@ -207,7 +217,7 @@ public class LectureFeedbackController {
             // 5. 모션 캡션
             long motionStart = System.currentTimeMillis();
             String motionJsonResponse = motionService.getCaptionResult(holistic.getBytes());
-            MotionRangeSplitDTO motionSplit = motionService.splitMotionCaptionByRange(motionJsonResponse, 120, 150);
+            MotionRangeSplitDTO motionSplit = motionService.splitMotionCaptionByRange(motionJsonResponse, eventStartMs/1000, eventEndMs/1000);
             String rangeMotionCaption = motionService.formatRangeCaptionsCompressed(motionSplit.getRangeCaptions());
             motionCaptionService.save(motionJsonResponse);
             long motionEnd = System.currentTimeMillis();
@@ -247,7 +257,7 @@ public class LectureFeedbackController {
 
             CompletableFuture<EvaluationResultDTO> eventEvalFuture = CompletableFuture.supplyAsync(() -> {
                 long subStart = System.currentTimeMillis();
-                EvaluationResultDTO eventResult = gptEventService.getEventEvaluation(eventInfo, textInRange, rangeMotionCaption, configInfo);
+                EvaluationResultDTO eventResult = gptEventService.getEventEvaluation(eventDescription, textInRange, rangeMotionCaption, configInfo);
                 long subEnd = System.currentTimeMillis();
                 System.out.println("🟩 이벤트 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
                 return eventResult;
