@@ -107,6 +107,8 @@ public class LectureFeedbackController {
             String motionCapture = motionService.getCaptionResult(holistic.getBytes());
             motionCaptionService.save(motionCapture);
             long motionEnd = System.currentTimeMillis();
+            System.out.println("------모션 캡션 정보-------");
+            System.out.println(motionCapture);
             System.out.println("🟩 모션 처리 소요 시간: " + (motionEnd - motionStart) + "ms");
 
             // 6. 평가 기준 불러오기

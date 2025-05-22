@@ -58,6 +58,12 @@ jobs:
             -e "ssh -i ec2-key.pem -o StrictHostKeyChecking=no" \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ec2-user/python_server/
 
+          # 실행 권한 부여
+          ssh -i ec2-key.pem -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "chmod +x /home/ec2-user/python_server/start-python.sh"
+      
+
       # 10. Python 서버 systemd로 재시작 (백그라운드 실행만)
       - name: Restart Python server via systemd
         uses: appleboy/ssh-action@master
