@@ -37,6 +37,7 @@ public class LectureFeedbackController {
     private final MotionCaptionService motionCaptionService;
     private final SSTService sstService;
     private final GPTUserCriteriaService gptUserCriteriaService;
+    private final GPTMotionCaptionService gptMotionCaptionService;
 
     private File convertToTempFile(MultipartFile multipartFile) throws IOException {
         String ext = multipartFile.getOriginalFilename() != null && multipartFile.getOriginalFilename().contains(".")
@@ -154,6 +155,15 @@ public class LectureFeedbackController {
                 return eventResult;
             });
 
+            CompletableFuture<MotionEvaluationDTO> motionEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                MotionEvaluationDTO motionEval = gptMotionCaptionService.getMotionCaptions(motionCapture);
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟦 모션 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                System.out.println("모션 평가 DTO\n" + motionEval);
+                return motionEval;
+            });
+
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 파이프라인 소요 시간: " + (gptEnd - gptStart) + "ms");
 
@@ -163,6 +173,7 @@ public class LectureFeedbackController {
 
             EvaluationResultDTO resultDto = generalEvalFuture.get();
             EvaluationResultDTO userCriteriaDto = userEvalFuture.get();
+            MotionEvaluationDTO motionEvaluationDTO = motionEvalFuture.get();
 
             List<EvaluationItemDTO> mergedList = new ArrayList<>();
 
@@ -174,6 +185,7 @@ public class LectureFeedbackController {
             }
 
             resultDto.setCriteriaScores(mergedList);
+            resultDto.setMotionCaptions(motionEvaluationDTO.getResults());
 
             return ResponseEntity.ok(resultDto);
 
@@ -301,9 +313,19 @@ public class LectureFeedbackController {
                 return eventResult;
             });
 
+            CompletableFuture<MotionEvaluationDTO> motionEvalFuture = CompletableFuture.supplyAsync(() -> {
+                long subStart = System.currentTimeMillis();
+                MotionEvaluationDTO motionEval = gptMotionCaptionService.getMotionCaptions(motionJsonResponse);
+                long subEnd = System.currentTimeMillis();
+                System.out.println("🟦 모션 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
+                System.out.println("모션 평가 DTO\n" + motionEval);
+                return motionEval;
+            });
+
             EvaluationResultDTO resultDto = generalEvalFuture.get();
             EvaluationResultDTO eventDto = eventEvalFuture.get();
             EvaluationResultDTO userCriteriaDto = userEvalFuture.get();
+            MotionEvaluationDTO motionEvaluationDTO = motionEvalFuture.get();
             resultDto.setEventReason(eventDto.getEventReason());
             resultDto.setEventScore(eventDto.getEventScore());
 
@@ -317,6 +339,7 @@ public class LectureFeedbackController {
             }
 
             resultDto.setCriteriaScores(mergedList);
+            resultDto.setMotionCaptions(motionEvaluationDTO.getResults());
 
             long gptEnd = System.currentTimeMillis();
             System.out.println("🟥 GPT 평가 병렬 실행 소요 시간: " + (gptEnd - gptStart) + "ms");

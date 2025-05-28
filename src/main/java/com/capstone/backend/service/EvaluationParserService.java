@@ -2,10 +2,14 @@ package com.capstone.backend.service;
 
 import com.capstone.backend.dto.EvaluationItemDTO;
 import com.capstone.backend.dto.EvaluationResultDTO;
+import com.capstone.backend.dto.MotionEvaluationDTO;
+import com.capstone.backend.dto.MotionEvaluationSplitDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,5 +92,31 @@ public class EvaluationParserService {
         result.setCriteriaScores(items);
         return result;
     }
+
+    public MotionEvaluationDTO parseMotionCaptions(String gptResponse) {
+        List<MotionEvaluationSplitDTO> results = new ArrayList<>();
+
+        // 모든 유형의 시간 포맷 대응 (매우 느슨한 구조)
+        Pattern pattern = Pattern.compile(
+                "\\[\\s*(\\d{2})\\s*[:\\s]+(\\d{2})\\s*[:\\s]+(\\d{2})\\s*[:\\s]+(\\d{2})\\s*]\\s*:\\s*(.+?)\\s*\\n+[^@\\n]*@+\\s*이유\\s*[:\\s]+(.+?)(?=(\\n+\\s*\\*|\\z))",
+                Pattern.DOTALL
+        );
+
+        Matcher matcher = pattern.matcher(gptResponse);
+        while (matcher.find()) {
+            MotionEvaluationSplitDTO dto = new MotionEvaluationSplitDTO(
+                    matcher.group(1),  // startMin
+                    matcher.group(2),  // startSec
+                    matcher.group(3),  // endMin
+                    matcher.group(4),  // endSec
+                    matcher.group(5).trim(), // label
+                    matcher.group(6).trim()  // reason
+            );
+            results.add(dto);
+        }
+
+        return new MotionEvaluationDTO(results);
+    }
+
 
 }

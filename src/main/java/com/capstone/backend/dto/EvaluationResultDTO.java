@@ -17,4 +17,6 @@ public class EvaluationResultDTO {
     //event 관련 응답
     private String eventScore;
     private String eventReason;
+
+    private List<MotionEvaluationSplitDTO> motionCaptions;
 }
