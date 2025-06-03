@@ -1,9 +1,11 @@
 package com.capstone.backend.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.capstone.backend.dto.EvaluationItemDTO;
 import com.capstone.backend.dto.EvaluationResultDTO;
 import com.capstone.backend.dto.MotionEvaluationDTO;
 import com.capstone.backend.dto.MotionEvaluationSplitDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -93,28 +95,30 @@ public class EvaluationParserService {
         return result;
     }
 
-    public MotionEvaluationDTO parseMotionCaptions(String gptResponse) {
-        List<MotionEvaluationSplitDTO> results = new ArrayList<>();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
-        Pattern pattern = Pattern.compile(
-                "\\*+\\s*\\[\\s*(\\d{2})\\s*:\\s*(\\d{2})\\s*]\\s*,?\\s*\\[\\s*(\\d{2})\\s*:\\s*(\\d{2})\\s*]\\s*:\\s*(.+?)\\s*\\n+@+\\s*이유\\s*:?\\s*(.+?)(?=\\n\\s*\\*+|\\z)",
-                Pattern.DOTALL
-        );
 
-        Matcher matcher = pattern.matcher(gptResponse);
-        while (matcher.find()) {
-            MotionEvaluationSplitDTO dto = new MotionEvaluationSplitDTO(
-                    matcher.group(1), // startMin
-                    matcher.group(2), // startSec
-                    matcher.group(3), // endMin
-                    matcher.group(4), // endSec
-                    matcher.group(5).trim(), // label
-                    matcher.group(6).trim()  // reason
+    public static MotionEvaluationDTO parseMotionCaptions(String gptRawResponse) {
+        try {
+            // ✅ 핵심 전략: [ ... ] 만 추출
+            int start = gptRawResponse.indexOf('[');
+            int end = gptRawResponse.lastIndexOf(']');
+
+            if (start == -1 || end == -1 || start >= end) {
+                throw new RuntimeException("유효한 JSON 배열이 감지되지 않았습니다.");
+            }
+
+            String jsonArray = gptRawResponse.substring(start, end + 1).trim();
+
+            List<MotionEvaluationSplitDTO> results = mapper.readValue(
+                    jsonArray,
+                    new TypeReference<List<MotionEvaluationSplitDTO>>() {}
             );
-            results.add(dto);
-        }
 
-        return new MotionEvaluationDTO(results);
+            return new MotionEvaluationDTO(results);
+        } catch (Exception e) {
+            throw new RuntimeException("❌ GPT JSON 응답 파싱 실패: " + e.getMessage(), e);
+        }
     }
 
 

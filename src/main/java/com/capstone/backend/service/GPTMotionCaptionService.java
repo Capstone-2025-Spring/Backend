@@ -22,31 +22,48 @@ public class GPTMotionCaptionService {
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
     private final String promptTemplate = """
             너는 교육 전문가로서 강의자의 비언어적 표현에 따라 강의를 평가하는 역할을 맡고 있다.
-            
-            아래는 강의자의 강의 중 비언어적 표현이다. 형식은 다음과 같이 제공된다
-            ※ 모션 데이터 형식: [start_mm:start_ss : end_mm:end_ss] : label
-            ※ label_map = {
-                0: "서있음",
-                1: "손 머리에 대는 중",
-                2: "뒤 돌고 있음",
-                3: "팔짱끼는 중",
-                4: "고개를 숙이고 있음"
-              }
-              
-            강의자의 비언어적 표현 데이터 : {motion}
-              
-            제공된 데이터를 바탕으로 가장 지양해야 할 비언어적 표현이 담긴 구간 두 개를 다음 형식에 맞추어 제공하라.
-            
-            ※ 결과물 형식
-            ***** [동작 시작 분:동작 시작 초], [동작 종료 분:동작 종료 초] : label
-            @@@@@ 이유 : 한 문장 이상의 선정 이유
-            
-            ***** [start_mm:start_ss], [end_mm:end_ss] : label
-            @@@@@ 이유 : 한 문장 이상의 선정 이유
-            
-            ※ 결과물 예시
-            ***** [00:59], [01:04] : 고개를 숙이고 있음
-            @@@@@ 이유 : 강의 중 고개를 숙이고 있는 것은 청중과의 시선 교환을 방해하여 청중의 집중력을 떨어뜨릴 수 있습니다
+             
+             아래는 강의자의 강의 중 비언어적 표현 데이터이다. 형식은 다음과 같다:
+             ※ 모션 데이터 형식: [start_mm:start_ss : end_mm:end_ss] : label
+             ※ label_map = {
+                 0: "서있음",
+                 1: "손 머리에 대는 중",
+                 2: "뒤 돌고 있음",
+                 3: "팔짱끼는 중",
+                 4: "고개를 숙이고 있음"
+               }
+             
+             강의자의 비언어적 표현 데이터: {motion}
+             
+             다음 조건에 따라 **가장 지양해야 할 비언어적 표현 구간 2개**를 평가하고 아래와 같이 **구조화된 JSON 형식**으로만 출력하라:
+             
+             🎯 출력 JSON은 다음과 같은 구조를 반드시 따른다:
+             - startMin: 문자열, 시작 분 (예: "00")
+             - startSec: 문자열, 시작 초 (예: "59")
+             - endMin: 문자열, 종료 분 (예: "01")
+             - endSec: 문자열, 종료 초 (예: "04")
+             - label: 문자열, 비언어적 표현
+             - reason: 문자열, 한 문장 이상의 설명
+             
+             🎯 출력 예시:
+             [
+               {
+                 "startMin": "00",
+                 "startSec": "59",
+                 "endMin": "01",
+                 "endSec": "04",
+                 "label": "고개를 숙이고 있음",
+                 "reason": "강의 중 고개를 숙이는 자세는 자신감 부족으로 인식될 수 있다."
+               },
+               {
+                 "startMin": "01",
+                 "startSec": "33",
+                 "endMin": "01",
+                 "endSec": "39",
+                 "label": "뒤 돌고 있음",
+                 "reason": "청중에게 등을 보이는 행동은 소통을 방해한다."
+               }
+             ]
             """;
     public String fillMotionPrompt(String motionInfo) {
         return promptTemplate.replace("{motion}", motionInfo);
