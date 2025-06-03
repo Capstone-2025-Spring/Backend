@@ -160,7 +160,7 @@ public class LectureFeedbackController {
                 MotionEvaluationDTO motionEval = gptMotionCaptionService.getMotionCaptions(motionCapture);
                 long subEnd = System.currentTimeMillis();
                 System.out.println("🟦 모션 평가 GPT 소요 시간: " + (subEnd - subStart) + "ms");
-                System.out.println("모션 평가 DTO\n" + motionEval);
+                System.out.println("모션 평가 DTO \n" + motionEval);
                 return motionEval;
             });
 
