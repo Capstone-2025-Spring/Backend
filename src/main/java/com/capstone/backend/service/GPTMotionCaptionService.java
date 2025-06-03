@@ -38,11 +38,15 @@ public class GPTMotionCaptionService {
             제공된 데이터를 바탕으로 가장 지양해야 할 비언어적 표현이 담긴 구간 두 개를 다음 형식에 맞추어 제공하라.
             
             ※ 결과물 형식
-            ***** [start_mm:start_ss : end_mm:end_ss] : label
+            ***** [동작 시작 분:동작 시작 초], [동작 종료 분:동작 종료 초] : label
             @@@@@ 이유 : 한 문장 이상의 선정 이유
             
-            ***** [start_mm:start_ss : end_mm:end_ss] : label
+            ***** [start_mm:start_ss], [end_mm:end_ss] : label
             @@@@@ 이유 : 한 문장 이상의 선정 이유
+            
+            ※ 결과물 예시
+            ***** [00:59], [01:04] : 고개를 숙이고 있음
+            @@@@@ 이유 : 강의 중 고개를 숙이고 있는 것은 청중과의 시선 교환을 방해하여 청중의 집중력을 떨어뜨릴 수 있습니다
             """;
     public String fillMotionPrompt(String motionInfo) {
         return promptTemplate.replace("{motion}", motionInfo);

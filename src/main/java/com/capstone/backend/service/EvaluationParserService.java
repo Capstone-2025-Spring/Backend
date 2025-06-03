@@ -96,19 +96,18 @@ public class EvaluationParserService {
     public MotionEvaluationDTO parseMotionCaptions(String gptResponse) {
         List<MotionEvaluationSplitDTO> results = new ArrayList<>();
 
-        // 모든 유형의 시간 포맷 대응 (매우 느슨한 구조)
         Pattern pattern = Pattern.compile(
-                "\\[\\s*(\\d{2})\\s*[:\\s]+(\\d{2})\\s*[:\\s]+(\\d{2})\\s*[:\\s]+(\\d{2})\\s*]\\s*:\\s*(.+?)\\s*\\n+[^@\\n]*@+\\s*이유\\s*[:\\s]+(.+?)(?=(\\n+\\s*\\*|\\z))",
+                "\\*+\\s*\\[\\s*(\\d{2})\\s*:\\s*(\\d{2})\\s*]\\s*,?\\s*\\[\\s*(\\d{2})\\s*:\\s*(\\d{2})\\s*]\\s*:\\s*(.+?)\\s*\\n+@+\\s*이유\\s*:?\\s*(.+?)(?=\\n\\s*\\*+|\\z)",
                 Pattern.DOTALL
         );
 
         Matcher matcher = pattern.matcher(gptResponse);
         while (matcher.find()) {
             MotionEvaluationSplitDTO dto = new MotionEvaluationSplitDTO(
-                    matcher.group(1),  // startMin
-                    matcher.group(2),  // startSec
-                    matcher.group(3),  // endMin
-                    matcher.group(4),  // endSec
+                    matcher.group(1), // startMin
+                    matcher.group(2), // startSec
+                    matcher.group(3), // endMin
+                    matcher.group(4), // endSec
                     matcher.group(5).trim(), // label
                     matcher.group(6).trim()  // reason
             );
@@ -117,6 +116,7 @@ public class EvaluationParserService {
 
         return new MotionEvaluationDTO(results);
     }
+
 
 
 }
