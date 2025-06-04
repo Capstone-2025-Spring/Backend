@@ -21,7 +21,7 @@ public class GPTMotionCaptionService {
     private final EvaluationParserService evaluationParserService;
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
     private final String promptTemplate = """
-            너는 교육 전문가로서 강의자의 비언어적 표현에 따라 강의를 평가하는 역할을 맡고 있다.
+            너는 교육 전문가로서 강의자의 비언어적 표현에 따라 강의를 엄격하게 평가해야한다.
              
              아래는 강의자의 강의 중 비언어적 표현 데이터이다. 형식은 다음과 같다:
              ※ 모션 데이터 형식: [start_mm:start_ss : end_mm:end_ss] : label
@@ -32,12 +32,12 @@ public class GPTMotionCaptionService {
                  3: "팔짱끼는 중",
                  4: "고개를 숙이고 있음"
                }
-             
+             서있음을 제외한 동작들은, 강의에 부정적인 영향을 주는 요소이므로 평가에 반영해야 한다.
              강의자의 비언어적 표현 데이터: {motion}
              
-             다음 조건에 따라 **가장 지양해야 할 서로 다른 종류의 비언어적 표현 구간 2개**를 평가하고 아래와 같이 **구조화된 JSON 형식**으로만 출력하라:
+             다음 조건에 따라 **"서있음"을 제외하고 가장 오랜 기간 연속되는 서로 다른 종류의 비언어적 표현 구간 2개**를 골라 와서 평가하고 아래와 같이 **구조화된 JSON 형식**으로만 출력하라:
              
-             🎯 출력 JSON은 다음과 같은 구조를 반드시 따른다:
+              출력 JSON은 다음과 같은 구조를 반드시 따른다:
              - startMin: 문자열, 시작 분 (예: "00")
              - startSec: 문자열, 시작 초 (예: "59")
              - endMin: 문자열, 종료 분 (예: "01")
@@ -45,7 +45,7 @@ public class GPTMotionCaptionService {
              - label: 문자열, 비언어적 표현
              - reason: 문자열, 한 문장 이상의 설명
              
-             🎯 출력 예시:
+              출력 예시:
              [
                {
                  "startMin": "00",
