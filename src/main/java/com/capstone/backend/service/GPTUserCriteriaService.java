@@ -74,7 +74,7 @@ public class GPTUserCriteriaService {
         Map<String, Object> body = new HashMap<>();
         body.put("model", openAiProperties.getModel());
         body.put("messages", List.of(systemMessage));
-        body.put("temperature", 0.1);
+        body.put("temperature", 0);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
