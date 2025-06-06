@@ -159,6 +159,9 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         
         ##### 강의 대상과 유형, 환경과의 일치성 평가 : (점수 1-10)
         ##### 이유 서술
+        
+        ##### 강의 주제와의 일치성 평가 : (점수 1-10)
+        ##### 이유 서술
       
         ##### Overall Teaching Ability Score : (점수 1-10)  
         ##### 이유 서술
