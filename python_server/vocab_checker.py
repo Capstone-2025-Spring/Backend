@@ -33,9 +33,9 @@ def check_vocab(text):
     blocked_ratio = len(blocked) / len(tokens) if tokens else 0
 
     # 난이도 판정 (금지어가 많을수록 어렵다)
-    if blocked_ratio >= 0.4:
+    if blocked_ratio >= 0.2:
         level = "어려움"
-    elif blocked_ratio >= 0.2:
+    elif blocked_ratio >= 0.05:
         level = "보통"
     else:
         level = "적절"

@@ -19,7 +19,8 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         <입력 데이터>
         - STT 텍스트: {text}
         - 음성 분석 결과 (속도, 억양, 강조 등): {audio}
-        - 강의 대상 및 환경 정보: {config}
+        - 강의 사전 정보: {config}
+            ※ title 과 subject 과 강의 내용이 일치하는지 아주 엄격하게 검증해야 한다
         - 모션 분석 요약: {motion}
             ※ 모션 데이터 형식: [start_mm:start_ss : end_mm:end_ss] : label
             ※ label_map = {
@@ -47,7 +48,8 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         
         3. 강의 주제와의 연관성
            → 강의 내용이 강의 주제와 얼마나 연관되어 있는지 평가한다
-           
+           → 만일 강의 사전 정보의 title, subject 내용과 강의 내용이 일치하지 않을 시 엄격하고 비판적이게 일갈한다.
+                      
         4. 어휘 수준 평가
            → 사용된 용어가 대상 수준에 적합한가?
            → 전문 용어 사용 시 설명이 충분히 동반되었는가?
@@ -72,7 +74,8 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         9. 강의 대상과 유형, 환경과의 일치성 평가
            → 강의 대상에 맞는 강의를 진행했는지 평가
            → 강의 대상의 유형과 강의 환경에 적합한 강의였는지 평가
-        
+           → 강의 Title, Subject와 강의 내용이 일치하지 않을 경우 아주 낮은 평가를 내린다
+                   
         이 구조를 유지하면서 사고하고, 각 항목에 대해 분석하고 구체적인 내용을 채워주세요.
         """);
         initPrompt("GEval", """
@@ -81,6 +84,7 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         다음은 한 모의 강의에서 수집된 멀티모달 데이터입니다. 당신의 과제는 이 데이터를 바탕으로, 강사의 강의력을 다음 기준에 따라 엄격하고 체계적으로 평가하는 것입니다.  
         단순한 점수 제공이 아닌, **분석적 사고(Chain-of-Thought)**를 기반으로 각 항목에 대해 자유로운 판단, **정량 점수**, **정당한 설명**을 함께 제시하십시오.
         점수 배정은 후하지 않고 엄격하게 진행되어야 합니다. 여기서 엄격함은 8 이상의 점수를 쉽게 부여하지 않는 것을 의미한다.
+        특히 강의 title과 subject와 강의 내용이 일치하지 않다면 점수를 정말 큰 폭으로 깎아야만 한다.
         각 기준별 **출력 형식은 반드시 아래 예시를 따르십시오.**
         
         ---
@@ -137,7 +141,8 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         ### [3] (당신이 해야 할 일) 당신의 메타 평가 과제
         
         🔹 **1. 점수의 타당성 재검토 및 최종 종합 출력 (Score Appropriateness Check)**  
-        각 항목의 점수가 주어진 데이터 요약(Hypothesis)에 비추어 과도하거나 부족하지 않은지 엄격하게 판단하세요.  
+        각 항목의 점수가 주어진 데이터 요약(Hypothesis)에 비추어 과도하거나 부족하지 않은지 엄격하게 판단하세요
+        특히 강의 환경 정보에서 title, subject와 강의 내용이 일치하지 않을 시 아주 낮은 점수와 엄중한 피드백을 진행한다.
         점수가 부적절하다고 판단될 경우, 새로운 점수와 그에 대한 이유를 간단히 조정하세요
         
         응답을 단어 기준으로 파싱하기 좋게 기준 앞에는 무조건 #(샾)을 5개 붙히고, 해당 이유 서술 앞에도 #(샾)을 5개 붙혀줘야해.
