@@ -13,9 +13,6 @@ public class PromptTemplateInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         initPrompt("CoT", """
-        당신은 교육 분야의 아주 엄격한 강의 능력 평가 전문가입니다.
-        다음과 같은 멀티모달 강의 데이터를 바탕으로 강사의 강의력을 평가해주세요.
-        
         <평가 절차>
         다음과 같은 순서로 일관되고 반복 가능한 평가를 진행해주세요. 각 단계는 정량 및 정성적 기준을 모두 포함하며, 마지막에 종합 피드백을 생성해야 합니다:
         
@@ -91,15 +88,9 @@ public class PromptTemplateInitializer implements CommandLineRunner {
         ---
         
         ### 평가 절차 (Chain-of-Thought 분석 흐름)  
-        다음 CoT 를 통해 사고하고 앞으로의 평가를 위해 준비하세요:  
+        다음 <CoT>와 <입력 데이터> 를 통해 사고하고 평가하세요
         {CoT}
         
-        ---
-        
-        추가적으로 고려해야 할 평가 대상 : {criteria}
-        
-        
-        ---
         
         ### [출력 형식 지침 — 각 항목당 아래 양식을 반드시 따르십시오]
         
